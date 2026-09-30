@@ -13,7 +13,7 @@ You ask "what happened today that I should watch?". The agent returns up to five
 - All data lives in `data/events.db`, a Chinook-style SQLite database. `schema.sql` defines it. It is tracked, not git-ignored.
 - The lead agent can query the database through `read_sql` (read-only).
 - `data/events_legacy.db` is the pre-rebuild database, kept as a backup. Delete it once you are happy with the new one.
-- Ruff passes. 22 tests pass.
+- Ruff passes. 24 tests pass.
 
 ## How it works
 
@@ -65,7 +65,7 @@ followup: saved event ID
 4. **Weak sources get through.** The RTX event rests on one Zacks summary. Consider requiring two independent sources, or a primary one.
 5. **LangSmith: fixed 1 Oct.** New key works. Each brief is one trace, "Event brief", holding the 5 Tavily searches, Jev scoring, the agent and the code checks. `TYPESAFE_API_KEY` in `.env` still ends in a stray newline.
 6. **Cost not logged.** The US$10/month target is unchecked.
-7. **GDELT is one old file (29 Sep).** Current discovery depends on Tavily.
+7. **GDELT is live: fixed 1 Oct.** `refresh-gdelt` downloads a day's export, and each brief refreshes its own date. The file lands about 07:00 UTC the next day, so "today" briefs still rely on Tavily. Only the top 300 URLs per event date are kept (~0.8MB/day), so `events.db` stays small enough for Git. It holds 27-29 Sep now.
 8. **Retrieval: fixed 1 Oct.** One long keyword query returned 0 of 6 usable results. Now short topic queries, with `time_range` for today. The same run went from 3 to 28 sources.
 9. **Commentary saved as an event.** 9694dbcb7ea2 (US import rules) has no dated development. Add a check, and decide whether to delete it or keep it as an eval example.
 10. **Source quality: fixed 1 Oct.** The first sweep now reads major outlets only (33 of 33 sources in the test run). Before: The 28 sources in the fixed run came from 26 mostly mid-tier sites (Anadolu, Asia News Network, an opinion column). No Reuters, CNBC or Bloomberg was retrieved. Options: Tavily `include_domains` for a trusted-outlet pass, or a source-quality rule in the prompt.

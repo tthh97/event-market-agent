@@ -10,6 +10,7 @@ import hashlib
 import io
 import os
 import sqlite3
+import zipfile
 from collections import Counter
 from contextlib import contextmanager
 from datetime import UTC, date, datetime
@@ -73,30 +74,84 @@ def read_only_query(sql, db=None, max_rows=50):
 # GDELT -----------------------------------------------------------------------
 
 
+GDELT_DAILY = "https://data.gdeltproject.org/events/{day}.export.CSV.zip"
+# URLs kept per event date, most-mentioned first. A full day is ~110k rows and ~25MB, too big
+# for a Git-tracked database. Briefs read at most 30 candidates, so 300 keeps every one they see.
+GDELT_KEEP_URLS = 300
+
+
 def import_gdelt(path, db=None):
-    """Import a 58-column GDELT daily export, keeping event date and ingestion date distinct."""
+    """Import a local 58-column GDELT daily export file."""
     path = Path(path).expanduser().resolve()
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    return import_gdelt_text(path.read_text(encoding="utf-8"), path.name, db)
+
+
+def refresh_gdelt(day, db=None):
+    """Download and import the official GDELT daily export for one date.
+
+    The file for a date is published around 07:00 UTC the next day. Before that it is not found.
+    """
+    name = f"{day:%Y%m%d}.export.CSV"
+    with connect(db) as con:
+        if con.execute("SELECT 1 FROM DataImport WHERE Source = 'gdelt' AND FileName = ?", [name]).fetchone():
+            return {"status": "already_imported", "file": name}
+    url = GDELT_DAILY.format(day=f"{day:%Y%m%d}")
+    try:
+        response = httpx.get(url, follow_redirects=True, timeout=120)
+        if response.status_code == 404:
+            return {"status": "not_published", "file": name,
+                    "note": "GDELT publishes a day's export around 07:00 UTC the next day."}
+        response.raise_for_status()
+        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+            text = archive.read(archive.namelist()[0]).decode("utf-8")
+    except (httpx.HTTPError, zipfile.BadZipFile) as exc:
+        return {"status": "unavailable", "file": name, "error_type": type(exc).__name__}
+    return {**import_gdelt_text(text, name, db), "source": url}
+
+
+def import_gdelt_text(text, name, db=None):
+    """Import one GDELT daily export, keeping event date and ingestion date distinct.
+
+    Keeps the GDELT_KEEP_URLS most-mentioned URLs per event date, with all their rows.
+    """
+    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
     rows, dates = [], Counter()
-    with path.open(encoding="utf-8") as file:
-        for line, row in enumerate(csv.reader(file, delimiter="\t"), 1):
-            if len(row) != 58:
-                raise ValueError(f"Line {line}: expected 58 columns (GDELT daily export), got {len(row)}")
-            event_day = datetime.strptime(row[1], "%Y%m%d").date().isoformat()
-            added_day = datetime.strptime(row[56][:8], "%Y%m%d").date().isoformat()
-            dates[event_day] += 1
-            rows.append([row[0], event_day, added_day, row[6], row[16], row[26],
-                         int(row[31]), int(row[32]), int(row[33]), row[50], row[51], row[57]])
+    for line, row in enumerate(csv.reader(io.StringIO(text), delimiter="\t"), 1):
+        if len(row) != 58:
+            raise ValueError(f"Line {line}: expected 58 columns (GDELT daily export), got {len(row)}")
+        event_day = datetime.strptime(row[1], "%Y%m%d").date().isoformat()
+        added_day = datetime.strptime(row[56][:8], "%Y%m%d").date().isoformat()
+        dates[event_day] += 1
+        rows.append([row[0], event_day, added_day, row[6], row[16], row[26],
+                     int(row[31]), int(row[32]), int(row[33]), row[50], row[51], row[57]])
     with connect(db) as con:
         if con.execute("SELECT 1 FROM DataImport WHERE Sha256 = ?", [digest]).fetchone():
             return {"status": "already_imported", "rows": len(rows), "event_dates": dict(dates)}
         import_id = con.execute(
             "INSERT INTO DataImport (Source, FileName, Sha256, RowCount, ImportedAt) VALUES (?, ?, ?, ?, ?)",
-            ["gdelt", path.name, digest, len(rows), now_utc()],
+            ["gdelt", name, digest, len(rows), now_utc()],
         ).lastrowid
         con.executemany("INSERT OR IGNORE INTO GdeltEvent VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                         [r + [import_id] for r in rows])
-    return {"status": "imported", "rows": len(rows), "event_dates": dict(dates), "sha256": digest}
+        prune_gdelt(con)
+        kept = con.execute("SELECT count(*) FROM GdeltEvent WHERE ImportId = ?", [import_id]).fetchone()[0]
+    # Pruned rows leave free pages. Without this the file keeps the size of the full day (~25MB).
+    con = sqlite3.connect(Path(db or DB_PATH))
+    con.execute("VACUUM")
+    con.close()
+    return {"status": "imported", "rows": len(rows), "rows_kept": kept, "event_dates": dict(dates), "sha256": digest}
+
+
+def prune_gdelt(con, keep=None):
+    """Delete GDELT rows outside the most-mentioned URLs of their event date."""
+    con.execute("""
+        DELETE FROM GdeltEvent WHERE rowid NOT IN (
+            SELECT g.rowid FROM GdeltEvent g JOIN (
+                SELECT EventDate, SourceUrl FROM (
+                    SELECT EventDate, SourceUrl, row_number() OVER (
+                        PARTITION BY EventDate ORDER BY max(NumMentions) DESC, SourceUrl) AS n
+                    FROM GdeltEvent WHERE SourceUrl LIKE 'http%' GROUP BY EventDate, SourceUrl)
+                WHERE n <= ?) top USING (EventDate, SourceUrl))""", [keep or GDELT_KEEP_URLS])
 
 
 def candidates(as_of, limit=12, db=None):

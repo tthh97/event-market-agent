@@ -55,6 +55,49 @@ def test_import_dates_and_idempotency(tmp_path):
         import_gdelt(path, db)
 
 
+def gdelt_row(i, url, mentions, day='20260929'):
+    row = [''] * 58
+    for idx, val in {0: str(i), 1: day, 26: '040', 31: str(mentions), 32: '1', 33: '1', 56: day, 57: url}.items():
+        row[idx] = val
+    return '\t'.join(row)
+
+
+def test_gdelt_import_keeps_most_mentioned_urls_per_date(tmp_path, monkeypatch):
+    monkeypatch.setattr(events_db, 'GDELT_KEEP_URLS', 2)
+    rows = [gdelt_row(1, 'https://a.example', 50), gdelt_row(2, 'https://a.example', 5),
+            gdelt_row(3, 'https://b.example', 30), gdelt_row(4, 'https://c.example', 10),
+            gdelt_row(5, 'https://old.example', 1, day='20260928')]
+    result = events_db.import_gdelt_text('\n'.join(rows), '20260929.export.CSV', tmp_path/'test.db')
+    assert result['rows'] == 5 and result['rows_kept'] == 4
+    found = candidates(date(2026,9,29), db=tmp_path/'test.db')['candidates']
+    # Both rows of the top URL survive, so its row count is unchanged. c.example is dropped.
+    assert [(c['url'], c['raw_rows']) for c in found] == [('https://a.example', 2), ('https://b.example', 1)]
+
+
+def test_refresh_gdelt_downloads_unzips_and_skips_known_files(tmp_path, monkeypatch):
+    import io
+    import zipfile
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, 'w') as archive:
+        archive.writestr('20260929.export.CSV', gdelt_row(1, 'https://a.example', 9))
+    requests = []
+    class Response:
+        def __init__(self, code, content=b''):
+            self.status_code, self.content = code, content
+        def raise_for_status(self): pass
+    def get(url, **kwargs):
+        requests.append(url)
+        return Response(200, buffer.getvalue()) if '20260929' in url else Response(404)
+    monkeypatch.setattr(events_db.httpx, 'get', get)
+    db = tmp_path/'test.db'
+    assert events_db.refresh_gdelt(date(2026,9,29), db)['status'] == 'imported'
+    assert requests == ['https://data.gdeltproject.org/events/20260929.export.CSV.zip']
+    assert candidates(date(2026,9,29), db=db)['candidates'][0]['url'] == 'https://a.example'
+    assert events_db.refresh_gdelt(date(2026,9,29), db)['status'] == 'already_imported'
+    assert len(requests) == 1
+    assert events_db.refresh_gdelt(date(2026,9,30), db)['status'] == 'not_published'
+
+
 def test_citation_and_future_date_rejection():
     brief = Brief(events=[event()], limitations=[])
     validate_brief(brief, evidence(), date(2026,9,29), 5)
@@ -243,6 +286,7 @@ def test_runner_saves_validated_artifacts_without_live_model(tmp_path, monkeypat
     fake = SimpleNamespace(invoke=lambda *a, **k: {'structured_response':Brief(events=[event()], limitations=['Offline fixture'])})
     monkeypatch.setattr(lead_agent, 'agent', fake)
     monkeypatch.setattr(cli, 'listed', lambda symbols, as_of: (set(symbols), 'ok'))
+    monkeypatch.setattr(events_db, 'refresh_gdelt', lambda day: {'status': 'not_published'})
     cli.main(['brief','fixture','--date','2026-09-29','--no-jev'])
     files = list((tmp_path/'output').glob('*.json'))
     assert len(files) == 1

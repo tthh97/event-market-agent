@@ -9,7 +9,7 @@ Run:
 import argparse
 import json
 import os
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from langchain_core.callbacks import get_usage_metadata_callback
@@ -55,9 +55,12 @@ def run_brief(args):
         queries = research_tools.TOPIC_QUERIES[:max(1, args.max_searches - 1)]
     # The first sweep reads major outlets only. The researcher searches the open web.
     search_results = [session.search(q, major_outlets_only=not prior) for q in queries]
+    # Fetch the day's GDELT leads if published. Missing or failed downloads leave the brief to Tavily.
+    gdelt_refresh = events_db.refresh_gdelt(as_of)
     jev = classify(session.evidence) if args.jev else {"status": "disabled"}
     packet = {"question": question, "as_of": str(as_of), "timezone": TIMEZONE.key,
-              "max_events": 1 if prior else args.limit, "gdelt": events_db.candidates(as_of),
+              "max_events": 1 if prior else args.limit,
+              "gdelt": {**events_db.candidates(as_of), "refresh": gdelt_refresh["status"]},
               "saved_events": events_db.saved_events(as_of),
               "search_results": search_results, "jev": jev, "prior_event": prior}
 
@@ -151,6 +154,9 @@ def main(argv=None):
     scan = subs.add_parser("candidates", help="Inspect coverage-ranked raw leads without an LLM.")
     scan.add_argument("--date", type=date.fromisoformat, required=True)
     scan.add_argument("--limit", type=int, default=12, choices=range(1, 31))
+    gdelt = subs.add_parser("refresh-gdelt", help="Download and import the GDELT daily export for a date.")
+    gdelt.add_argument("--date", type=date.fromisoformat, default=datetime.now(UTC).date() - timedelta(days=1),
+                       help="Event date, default yesterday UTC (published about 07:00 UTC the next day)")
     subs.add_parser("refresh-gpr", help="Download the official daily GPR series into data/events.db.")
     subs.add_parser("list", help="List saved assessed events.")
     subs.add_parser("doctor", help="Check configuration without exposing secrets.")
@@ -171,6 +177,8 @@ def main(argv=None):
             result = events_db.import_gdelt(args.path)
         elif args.command == "candidates":
             result = events_db.candidates(args.date, args.limit)
+        elif args.command == "refresh-gdelt":
+            result = events_db.refresh_gdelt(args.date)
         elif args.command == "refresh-gpr":
             result = events_db.refresh_gpr()
         elif args.command == "cost":

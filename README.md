@@ -21,6 +21,10 @@ Default models: Sonnet lead, Haiku researcher. Default day boundaries: Asia/Sing
 ## Commands
 
 ```sh
+# Download and import the official GDELT daily export for a date (default yesterday UTC).
+# Every brief also does this for its own date. A day's file appears around 07:00 UTC the next day.
+uv run cli.py refresh-gdelt --date 2026-09-29
+
 # Import a local 58-column GDELT daily event export (not the 61-column GDELT 2.0 format).
 uv run cli.py import-gdelt /path/to/20260929.export.CSV
 
@@ -48,12 +52,16 @@ Reports are Markdown, HTML and JSON in `output/`. The HTML page opens with a "Ke
 
 ```text
 Question + requested date
-  -> GDELT candidate lookup + short Tavily topic searches (economy, policy, conflict, business, disasters)
+  -> short Tavily topic searches (economy, policy, conflict, business, disasters)
+  -> GDELT refresh for the date (download if published) + candidate lookup
   -> optional Jev category and economic-reach questions
   -> lead deep agent
        -> event-researcher subagent for missing evidence and exposure links
-  -> Pydantic output + citation-ID/date validation
-  -> host saves run, events, sources and exposures to data/events.db and renders Markdown/JSON
+  -> Pydantic output + citation-ID/date/ticker validation
+  -> drop tickers with no recent Yahoo Finance price
+  -> Jev severity, sector impact and direction, ticker exposure (top three ranked)
+  -> host saves run, events, sources, exposures and tickers to data/events.db
+     and renders Markdown, JSON and HTML (watch list ordered by severity)
 
 Saved event + follow-up date
   -> retrieve prior evidence and original event date
@@ -128,13 +136,15 @@ First result, 17-30 Sep backfill (scored 1 Oct 2026, prices to 29 Sep):
 
 Jev's direction calls did worse than guessing the common outcome, including its confident ones (40% at D+1, 15 calls). 25 of 56 exposures were called unclear. The samples are small and events overlap in time. Linked sectors moved more than the rest in 15 of 29 events at D+1 and 13 of 15 at D+5.
 
-## GDELT input inspected
+## GDELT
 
-The supplied export was imported successfully: **113,066 records, 58 tab-delimited columns**. All rows have ingestion date September 29, 2026; **110,827** have that event date. Other rows refer to September 28, September 22, August 30, September 2025, or October 2016.
+The first export, imported by hand on 30 Sep, had **113,066 records, 58 tab-delimited columns**. All rows had ingestion date September 29, 2026, and **110,827** had that event date. Other rows referred to September 28, September 22, August 30, September 2025, or October 2016. Each daily file mixes event dates like this.
 
 The filename and ingestion date do not establish when every event happened. Candidate queries require the requested event date and an ingestion date no later than it. Import preserves CAMEO strings and distinguishes both dates. URL groups are ranked by maximum mentions; counts are not summed across duplicate rows. Media attention is a lead-selection heuristic, not event significance, verified source independence, or market impact.
 
-This export supplies research leads for September 29; it is not today's feed. Current discovery uses Tavily until newer exports or other adapters are supplied. Source publication dates must come from the retrieved reporting, never from GDELT ingestion dates. Missing-date results are excluded.
+Live refresh (added 1 Oct 2026): `refresh-gdelt` downloads `data.gdeltproject.org/events/YYYYMMDD.export.CSV.zip`, and every brief runs it for its own date first. The file for a date is published around 07:00 UTC the next day (15:00 Singapore time), so a brief for today has no GDELT leads and relies on Tavily. Past dates get them. A missing or failed download never stops a brief.
+
+Only the 300 most-mentioned URLs per event date are kept, with all their rows. A full day is about 110,000 rows and 25MB, too much for a Git-tracked database. Kept, it is about 4,000 rows and 0.8MB. Briefs read at most 30 candidates, so nothing they see changes. The import vacuums the file afterwards. Source publication dates must come from the retrieved reporting, never from GDELT ingestion dates. Missing-date results are excluded.
 
 [GDELT daily-export codebook](https://data.gdeltproject.org/documentation/GDELT-Data_Format_Codebook.pdf)
 
@@ -173,8 +183,10 @@ As of 1 October 2026 (Singapore time).
 | Check | Result |
 |---|---|
 | Ruff | Passed |
-| Tests | 22 passed: Jev severity, impact, direction and ticker questions saved; top-three ranking and benchmark/duplicate ticker rejection; unlisted tickers dropped; HTML and Markdown ordered by severity; cost maths incl. cache, Jev directions saved per exposure, scorecard hit rules, the first sweep reads major outlets and flags every source, HTML report puts the watch list first and escapes text, today uses time_range and past dates use a date range, repeat stories attach to saved events, date filtering, duplicate imports, citations, follow-ups keep the event ID and date, MarketWindow rows, read-only `read_sql`, weekend returns, GPR vintage exclusion |
+| Tests | 24 passed: GDELT download, top-URL pruning and skip of known files; Jev severity, impact, direction and ticker questions saved; top-three ranking and benchmark/duplicate ticker rejection; unlisted tickers dropped; HTML and Markdown ordered by severity; cost maths incl. cache, Jev directions saved per exposure, scorecard hit rules, the first sweep reads major outlets and flags every source, HTML report puts the watch list first and escapes text, today uses time_range and past dates use a date range, repeat stories attach to saved events, date filtering, duplicate imports, citations, follow-ups keep the event ID and date, MarketWindow rows, read-only `read_sql`, weekend returns, GPR vintage exclusion |
 | Import supplied GDELT file | Passed, 113,066 records |
+| Live `refresh-gdelt` (1 Oct) | 27 Sep: 61,485 rows, 3,245 kept. 28 Sep: 97,242 rows, 4,048 kept. 29 Sep: skipped, already imported. 30 Sep: not published yet. `events.db` 30MB before pruning, 4.3MB after three days |
+| Live brief, 26 Sep, on a scratch copy of the database | The brief downloaded and imported the 26 Sep file itself (69,342 rows), then saved 2 events. US$0.09 |
 | Official GPR download and date parsing | Passed, latest observation September 28 |
 | Live brief, 29 Sep | 3 events saved (run before the database rebuild, migrated) |
 | Live brief, 30 Sep | 2 events. The agent used `read_sql` and named the already-saved Hormuz event |
