@@ -1,0 +1,26 @@
+[project]
+name = "event-market-agent"
+version = "0.1.0"
+description = "On-demand event research, sector exposure, and saved follow-ups"
+requires-python = ">=3.11,<3.15"
+dependencies = [
+  "deepagents==0.7.0",
+  "langchain-anthropic",
+  "python-dotenv",
+  "pydantic>=2",
+  "tavily-python",
+  "typesafe-sdk",
+  "yfinance",
+  "pandas",
+  "xlrd",
+  "httpx",
+  "langsmith>=0.14.2",
+]
+[dependency-groups]
+dev = ["ruff>=0.15.17", "pytest"]
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

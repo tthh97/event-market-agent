@@ -1,0 +1,376 @@
+{
+  "database": "data/backfill-2026-09-17-to-30.db",
+  "price_cutoff": "2026-09-29",
+  "scored_at": "2026-09-30T19:30:44.534301+00:00",
+  "directions": {
+    "D+1": {
+      "calls": 28,
+      "hits": 13,
+      "hit_rate": 0.464,
+      "majority_baseline": 0.571,
+      "confident_calls": 15,
+      "confident_hit_rate": 0.4,
+      "distinct_events": 20
+    },
+    "D+5": {
+      "calls": 11,
+      "hits": 5,
+      "hit_rate": 0.455,
+      "majority_baseline": 0.727,
+      "confident_calls": 7,
+      "confident_hit_rate": 0.429,
+      "distinct_events": 9
+    }
+  },
+  "linked_vs_other": {
+    "D+1": {
+      "events": 29,
+      "linked_pp": 1.193,
+      "others_pp": 1.082,
+      "linked_bigger": 15
+    },
+    "D+5": {
+      "events": 15,
+      "linked_pp": 2.633,
+      "others_pp": 1.917,
+      "linked_bigger": 13
+    }
+  },
+  "exposures": 56,
+  "unclear_calls": 25,
+  "calls_detail": {
+    "D0_to_D1": [
+      {
+        "event_id": "0a753f8abd56",
+        "sector": "utilities",
+        "direction": "down",
+        "confidence": 0.61,
+        "excess_pp": -3.4346775787893358,
+        "hit": true
+      },
+      {
+        "event_id": "b57f5fd6c888",
+        "sector": "energy",
+        "direction": "up",
+        "confidence": 0.99,
+        "excess_pp": -4.2381726678154426,
+        "hit": false
+      },
+      {
+        "event_id": "b57f5fd6c888",
+        "sector": "industrials",
+        "direction": "up",
+        "confidence": 0.94,
+        "excess_pp": -0.8369541200605513,
+        "hit": false
+      },
+      {
+        "event_id": "b57f5fd6c888",
+        "sector": "consumer_discretionary",
+        "direction": "down",
+        "confidence": 0.79,
+        "excess_pp": -0.7051693741374709,
+        "hit": true
+      },
+      {
+        "event_id": "ba8f96afff23",
+        "sector": "real_estate",
+        "direction": "down",
+        "confidence": 0.93,
+        "excess_pp": -1.9180865089295618,
+        "hit": true
+      },
+      {
+        "event_id": "d3f83c10d05c",
+        "sector": "communication_services",
+        "direction": "up",
+        "confidence": 0.24,
+        "excess_pp": 0.791610620618588,
+        "hit": true
+      },
+      {
+        "event_id": "f3ca04c06725",
+        "sector": "information_technology",
+        "direction": "down",
+        "confidence": 0.37,
+        "excess_pp": 2.103993060039633,
+        "hit": false
+      },
+      {
+        "event_id": "0522efbf6c5e",
+        "sector": "health_care",
+        "direction": "down",
+        "confidence": 0.73,
+        "excess_pp": 0.611369688532093,
+        "hit": false
+      },
+      {
+        "event_id": "140963788281",
+        "sector": "communication_services",
+        "direction": "up",
+        "confidence": 0.75,
+        "excess_pp": -1.172881220129618,
+        "hit": false
+      },
+      {
+        "event_id": "47a111902cc9",
+        "sector": "information_technology",
+        "direction": "up",
+        "confidence": 0.97,
+        "excess_pp": 0.9870881137081899,
+        "hit": true
+      },
+      {
+        "event_id": "9d6514dfd5a6",
+        "sector": "financials",
+        "direction": "down",
+        "confidence": 0.34,
+        "excess_pp": -1.6972993072572828,
+        "hit": true
+      },
+      {
+        "event_id": "248fd2804dbf",
+        "sector": "utilities",
+        "direction": "down",
+        "confidence": 0.87,
+        "excess_pp": -2.085068790028488,
+        "hit": true
+      },
+      {
+        "event_id": "248fd2804dbf",
+        "sector": "financials",
+        "direction": "down",
+        "confidence": 0.82,
+        "excess_pp": 0.3089757621624667,
+        "hit": false
+      },
+      {
+        "event_id": "155a4541df83",
+        "sector": "utilities",
+        "direction": "down",
+        "confidence": 0.24,
+        "excess_pp": -1.064826509434158,
+        "hit": true
+      },
+      {
+        "event_id": "155a4541df83",
+        "sector": "energy",
+        "direction": "down",
+        "confidence": 0.29,
+        "excess_pp": -0.9901460596886458,
+        "hit": true
+      },
+      {
+        "event_id": "6d3b635d70f2",
+        "sector": "information_technology",
+        "direction": "down",
+        "confidence": 0.87,
+        "excess_pp": 0.006855138005923411,
+        "hit": false
+      },
+      {
+        "event_id": "adf43255053b",
+        "sector": "materials",
+        "direction": "up",
+        "confidence": 0.7,
+        "excess_pp": -1.415701752666243,
+        "hit": false
+      },
+      {
+        "event_id": "e744232d3f8d",
+        "sector": "energy",
+        "direction": "up",
+        "confidence": 0.2,
+        "excess_pp": -0.594075522419979,
+        "hit": false
+      },
+      {
+        "event_id": "e744232d3f8d",
+        "sector": "utilities",
+        "direction": "up",
+        "confidence": 0.49,
+        "excess_pp": -0.07482654929428234,
+        "hit": false
+      },
+      {
+        "event_id": "ed6cbd6abb63",
+        "sector": "real_estate",
+        "direction": "down",
+        "confidence": 0.96,
+        "excess_pp": -1.1302618431649258,
+        "hit": true
+      },
+      {
+        "event_id": "ed6cbd6abb63",
+        "sector": "information_technology",
+        "direction": "down",
+        "confidence": 0.77,
+        "excess_pp": 0.015048334993483792,
+        "hit": false
+      },
+      {
+        "event_id": "57960a400a84",
+        "sector": "information_technology",
+        "direction": "down",
+        "confidence": 0.65,
+        "excess_pp": 0.025120464612105042,
+        "hit": false
+      },
+      {
+        "event_id": "ad427d41d071",
+        "sector": "information_technology",
+        "direction": "up",
+        "confidence": 0.8,
+        "excess_pp": 0.025120464612105042,
+        "hit": true
+      },
+      {
+        "event_id": "c1f392b930c1",
+        "sector": "information_technology",
+        "direction": "down",
+        "confidence": 0.49,
+        "excess_pp": 0.025120464612105042,
+        "hit": false
+      },
+      {
+        "event_id": "ee577e401886",
+        "sector": "industrials",
+        "direction": "down",
+        "confidence": 0.88,
+        "excess_pp": 0.16417216794780698,
+        "hit": false
+      },
+      {
+        "event_id": "ee577e401886",
+        "sector": "utilities",
+        "direction": "down",
+        "confidence": 0.56,
+        "excess_pp": 1.4331444590114373,
+        "hit": false
+      },
+      {
+        "event_id": "ee577e401886",
+        "sector": "financials",
+        "direction": "down",
+        "confidence": 0.43,
+        "excess_pp": -0.5865555901165664,
+        "hit": true
+      },
+      {
+        "event_id": "cb65653fcae0",
+        "sector": "consumer_discretionary",
+        "direction": "down",
+        "confidence": 0.16,
+        "excess_pp": -0.348380510136026,
+        "hit": true
+      }
+    ],
+    "D0_to_D5": [
+      {
+        "event_id": "0a753f8abd56",
+        "sector": "utilities",
+        "direction": "down",
+        "confidence": 0.61,
+        "excess_pp": -5.930785807476102,
+        "hit": true
+      },
+      {
+        "event_id": "b57f5fd6c888",
+        "sector": "energy",
+        "direction": "up",
+        "confidence": 0.99,
+        "excess_pp": -4.610772713689137,
+        "hit": false
+      },
+      {
+        "event_id": "b57f5fd6c888",
+        "sector": "industrials",
+        "direction": "up",
+        "confidence": 0.94,
+        "excess_pp": -0.28735035088574,
+        "hit": false
+      },
+      {
+        "event_id": "b57f5fd6c888",
+        "sector": "consumer_discretionary",
+        "direction": "down",
+        "confidence": 0.79,
+        "excess_pp": -1.9250800377756283,
+        "hit": true
+      },
+      {
+        "event_id": "ba8f96afff23",
+        "sector": "real_estate",
+        "direction": "down",
+        "confidence": 0.93,
+        "excess_pp": -3.884627705362631,
+        "hit": true
+      },
+      {
+        "event_id": "d3f83c10d05c",
+        "sector": "communication_services",
+        "direction": "up",
+        "confidence": 0.24,
+        "excess_pp": -0.5242430557425237,
+        "hit": false
+      },
+      {
+        "event_id": "f3ca04c06725",
+        "sector": "information_technology",
+        "direction": "down",
+        "confidence": 0.37,
+        "excess_pp": 2.205300276038158,
+        "hit": false
+      },
+      {
+        "event_id": "0522efbf6c5e",
+        "sector": "health_care",
+        "direction": "down",
+        "confidence": 0.73,
+        "excess_pp": 2.2200175227407026,
+        "hit": false
+      },
+      {
+        "event_id": "140963788281",
+        "sector": "communication_services",
+        "direction": "up",
+        "confidence": 0.75,
+        "excess_pp": -1.6560612292459753,
+        "hit": false
+      },
+      {
+        "event_id": "47a111902cc9",
+        "sector": "information_technology",
+        "direction": "up",
+        "confidence": 0.97,
+        "excess_pp": 1.022697026898356,
+        "hit": true
+      },
+      {
+        "event_id": "9d6514dfd5a6",
+        "sector": "financials",
+        "direction": "down",
+        "confidence": 0.34,
+        "excess_pp": -2.1787177005505476,
+        "hit": true
+      }
+    ]
+  },
+  "labels": {
+    "file": "evals/labels-backfill-2026-09-17-to-30.csv",
+    "events": 33,
+    "labelled": 0,
+    "precision": null,
+    "duplicates_flagged": 0
+  },
+  "cost": {
+    "month": "2026-09",
+    "runs": 14,
+    "runs_with_cost_data": 0,
+    "claude_cost_usd": 0,
+    "average_per_run_usd": null,
+    "by_model": [],
+    "note": "Claude cost only. Tavily credits and Jev usage are counted but not priced. Runs that failed before saving, and runs before usage logging, are not included.",
+    "budget_usd": 10.0
+  }
+}
