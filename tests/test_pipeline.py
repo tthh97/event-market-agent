@@ -1,21 +1,21 @@
-# tests/test_pipeline.py
 """Behavioral checks for data timing, citations, follow-ups, the database and price calculations."""
 import json
 import sqlite3
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
+from types import SimpleNamespace
 
 import pandas as pd
 import pytest
 
-import cli
+import brief_run
 import events_db
 import jev_api
-import lead_agent
+import point_in_time
 import research_tools
 from brief_checks import validate_brief
-from brief_report import render, render_html
+from brief_report import render_digest_html, render_html, save_reports
 from brief_schema import Brief
-from events_db import candidates, import_gdelt, load_event, save_run
+from events_db import candidates, import_gdelt, load_event, run_view, save_run
 from market_returns import calculate_windows
 
 
@@ -32,6 +32,47 @@ def event():
 def evidence():
     return {'s1': {'source_id': 's1', 'url': 'https://example.com/report', 'title': 'Fixture report',
                    'published_at': '2026-09-29T10:00:00+00:00', 'excerpt': 'Fixture'}}
+
+
+def payloads(brief):
+    return [jev_api.event_payload(e.model_dump(mode='json'), evidence()) for e in brief.events]
+
+
+def fake_jev(answers):
+    """Stand-in for jev_api.typesafe_call returning fixed raw answers, and the requests it received."""
+    calls = []
+
+    def call(state, questions, timeout=90):
+        calls.append({'state': state, 'questions': questions})
+        return {'model': 'jev-test', 'usage': {'input_tokens': 50, 'output_tokens': 5}, 'answers': answers}
+    return call, calls
+
+
+def score(value):
+    return {'type': 'score', 'score': value, 'confidence': 0.7, 'legend': {}, 'probabilities': {}}
+
+
+def scored(brief, answers):
+    return jev_api.assess(payloads(brief), fake_jev(answers)[0])
+
+
+def save(brief, as_of, db, judgements=None, kind='brief', **kwargs):
+    judgements = judgements or jev_api.unscored(payloads(brief))
+    return save_run(kind, 'q', as_of, brief, evidence(), 1, 'disabled', judgements, db=db, **kwargs)
+
+
+def fake_news(results):
+    """Stand-in for research_tools.tavily_search returning fixed results, and the params it received."""
+    calls = []
+
+    def news(query, **params):
+        calls.append(params)
+        return {'results': results}
+    return news, calls
+
+
+def fake_prices(frame):
+    return lambda tickers, start, end: frame[[t for t in tickers if t in frame.columns]]
 
 
 def test_import_dates_and_idempotency(tmp_path):
@@ -110,68 +151,80 @@ def test_citation_and_future_date_rejection():
         validate_brief(brief, evidence(), date(2026,9,28), 5)
 
 
-def test_followup_appends_and_preserves_date(tmp_path):
+def test_known_by_uses_end_of_day_in_event_timezone_and_never_the_future():
+    # Asia/Singapore is UTC+8: 15:59 UTC is still 29 Sep there, 16:00 UTC is 30 Sep.
+    assert point_in_time.known_by(datetime(2026,9,29,15,59,tzinfo=UTC), date(2026,9,29))
+    assert not point_in_time.known_by(datetime(2026,9,29,16,0,tzinfo=UTC), date(2026,9,29))
+    assert not point_in_time.known_by(datetime.now(UTC) + timedelta(hours=1), point_in_time.today() + timedelta(days=5))
+    assert point_in_time.parse_timestamp('Tue, 29 Sep 2026 10:00:00 GMT') == datetime(2026,9,29,10,tzinfo=UTC)
+    assert point_in_time.parse_timestamp('not a date') is None
+    ny_yesterday = datetime.now(point_in_time.NEW_YORK).date() - timedelta(days=1)
+    assert point_in_time.last_closed_session_day(date(2030,1,1)) == ny_yesterday
+    assert point_in_time.last_closed_session_day(date(2026,9,1)) == date(2026,9,1)
+
+
+def test_followup_attaches_to_the_saved_event_and_preserves_date(tmp_path):
     db = tmp_path/'test.db'
     brief = Brief(events=[event()], limitations=[])
-    _, ids = save_run('brief', 'q', date(2026,9,29), brief, evidence(), 1, 'disabled', db=db)
-    prior = load_event(ids[0], db)
-    validate_brief(brief, evidence(), date(2026,9,30), 1, prior)
+    _, ids = save(brief, date(2026,9,29), db)
+    validate_brief(brief, evidence(), date(2026,9,30), 1, followup_id=ids[0], db=db)
+    assert brief.events[0].tracked_event_id == ids[0]
     window = {'ticker': 'XLI', 'window': 'D0_to_D0', 'baseline_date': '2026-09-29', 'start_session': '2026-09-30',
               'end_session': '2026-09-30', 'return_pct': 1.0, 'spy_return_pct': 0.5, 'excess_percentage_points': 0.5}
-    _, updated_ids = save_run('followup', 'q', date(2026,9,30), brief, evidence(), 1, 'disabled',
-                              event_id=ids[0], market_metrics=[window], db=db)
+    _, updated_ids = save(brief, date(2026,9,30), db, kind='followup', market_metrics=[window])
     assert updated_ids == ids
     reloaded = load_event(ids[0], db)
     assert reloaded['as_of'] == '2026-09-30'
-    assert reloaded['event'] == {**event(), 'tracked_event_id': ids[0]}
+    saved = reloaded['event']
+    assert (saved['event_id'], saved['title'], saved['event_date'], saved['update']) == \
+        (ids[0], 'Factory closure', '2026-09-29', True)
+    assert saved['source_ids'] == ['s1'] and saved['exposures'][0]['sector'] == 'industrials'
     assert reloaded['evidence']['s1']['url'] == 'https://example.com/report'
-    assert events_db.list_events(db) == [{'event_id': ids[0], 'as_of': '2026-09-30', 'title': 'Factory closure',
-                                         'assessments': 2}]
+    assert events_db.saved_events(db=db) == [{'EventId': ids[0], 'Title': 'Factory closure', 'EventDate': '2026-09-29',
+                                              'LastAssessedOn': '2026-09-30', 'Assessments': 2}]
     with sqlite3.connect(db) as con:
         assert con.execute('SELECT Ticker, ExcessPp FROM MarketWindow').fetchall() == [('XLI', 0.5)]
-    brief.events[0].event_date = date(2026,9,30)
+    moved = Brief(events=[{**event(), 'event_date': '2026-09-30'}], limitations=[])
     with pytest.raises(ValueError, match='original event date'):
-        validate_brief(brief, evidence(), date(2026,9,30), 1, prior)
+        validate_brief(moved, evidence(), date(2026,9,30), 1, followup_id=ids[0], db=db)
+    other = Brief(events=[{**event(), 'tracked_event_id': 'elsewhere'}], limitations=[])
+    with pytest.raises(ValueError, match='different saved event'):
+        validate_brief(other, evidence(), date(2026,9,30), 1, followup_id=ids[0], db=db)
+    with pytest.raises(ValueError, match='exactly the tracked event'):
+        validate_brief(Brief(events=[], limitations=[]), evidence(), date(2026,9,30), 1, followup_id=ids[0], db=db)
 
 
-def test_brief_attaches_to_saved_event_instead_of_duplicating(tmp_path, monkeypatch):
+def test_brief_attaches_to_saved_event_instead_of_duplicating(tmp_path):
     # Reproduces the 30 Sep live run: a saved story came back in a later brief under a new ID.
-    monkeypatch.setattr(events_db, 'DB_PATH', tmp_path/'test.db')
+    db = tmp_path/'test.db'
     first = Brief(events=[{**event(), 'event_date': None}], limitations=[])
-    _, [saved_id] = save_run('brief', 'q', date(2026,9,29), first, evidence(), 1, 'disabled')
-    assert events_db.saved_events(date(2026,9,30))[0]['EventId'] == saved_id
+    _, [saved_id] = save(first, date(2026,9,29), db)
+    assert events_db.saved_events(date(2026,9,30), db=db)[0]['EventId'] == saved_id
 
     repeat = Brief(events=[{**event(), 'tracked_event_id': saved_id}], limitations=[])
-    validate_brief(repeat, evidence(), date(2026,9,30), 5)
-    _, ids = save_run('brief', 'q', date(2026,9,30), repeat, evidence(), 1, 'disabled')
+    validate_brief(repeat, evidence(), date(2026,9,30), 5, db=db)
+    _, ids = save(repeat, date(2026,9,30), db)
     assert ids == [saved_id]
-    assert events_db.list_events()[0]['assessments'] == 2
+    assert events_db.saved_events(db=db)[0]['Assessments'] == 2
     # The unknown onset date was filled once; now it is fixed.
-    assert events_db.get_event(saved_id)['EventDate'] == '2026-09-29'
+    assert events_db.get_event(saved_id, db)['EventDate'] == '2026-09-29'
     moved = Brief(events=[{**event(), 'tracked_event_id': saved_id, 'event_date': '2026-09-28'}], limitations=[])
     with pytest.raises(ValueError, match='original event date'):
-        validate_brief(moved, evidence(), date(2026,9,30), 5)
+        validate_brief(moved, evidence(), date(2026,9,30), 5, db=db)
 
     twice = Brief(events=[repeat.events[0], repeat.events[0]], limitations=[])
     with pytest.raises(ValueError, match='same saved event'):
-        validate_brief(twice, evidence(), date(2026,9,30), 5)
+        validate_brief(twice, evidence(), date(2026,9,30), 5, db=db)
     invented = Brief(events=[{**event(), 'tracked_event_id': 'nope'}], limitations=[])
     with pytest.raises(ValueError, match='Unknown tracked_event_id'):
-        validate_brief(invented, evidence(), date(2026,9,30), 5)
+        validate_brief(invented, evidence(), date(2026,9,30), 5, db=db)
 
 
-def test_first_sweep_reads_major_outlets_and_flags_every_source(monkeypatch):
-    monkeypatch.setenv('TAVILY_API_KEY', 'test')
-    calls = []
-    class Client:
-        def __init__(self, **kwargs): pass
-        def search(self, **kwargs):
-            calls.append(kwargs)
-            return {'results': [
-                {'url': 'https://www.reuters.com/a', 'title': 'R', 'content': 'x', 'published_date': '2026-09-29T01:00:00Z'},
-                {'url': 'https://smallsite.example/b', 'title': 'S', 'content': 'x', 'published_date': '2026-09-29T02:00:00Z'}]}
-    monkeypatch.setattr(research_tools, 'TavilyClient', Client)
-    session = research_tools.ResearchSession(date(2026,9,29), 2)
+def test_first_sweep_reads_major_outlets_and_flags_every_source():
+    news, calls = fake_news([
+        {'url': 'https://www.reuters.com/a', 'title': 'R', 'content': 'x', 'published_date': '2026-09-29T01:00:00Z'},
+        {'url': 'https://smallsite.example/b', 'title': 'S', 'content': 'x', 'published_date': '2026-09-29T02:00:00Z'}])
+    session = research_tools.ResearchSession(date(2026,9,29), 2, news=news)
     flags = {s['url']: s['major_outlet'] for s in session.search('markets', major_outlets_only=True)['sources']}
     assert flags == {'https://www.reuters.com/a': True, 'https://smallsite.example/b': False}
     assert 'reuters.com' in calls[0]['include_domains']
@@ -189,25 +242,22 @@ def test_market_weekend_baseline_and_incomplete_windows():
     assert rows[0]['excess_percentage_points'] == pytest.approx(5)
 
 
-def test_search_budget_dates_and_tool_invocation(monkeypatch):
-    monkeypatch.setenv('TAVILY_API_KEY', 'test')
-    class Client:
-        def __init__(self, **kwargs): pass
-        def search(self, **kwargs):
-            return {'results': [
-                {'url':'https://example.com/good','title':'Good','content':'Evidence','published_date':'2026-09-29T01:00:00Z'},
-                {'url':'https://example.com/future','published_date':'2026-10-02T00:00:00Z'},
-                {'url':'https://example.com/unknown'}]}
-    monkeypatch.setattr(research_tools, 'TavilyClient', Client)
-    monkeypatch.setattr(research_tools, 'SESSION', research_tools.ResearchSession(date(2026,9,29), 1))
-    assert 'error' in research_tools.research_news.invoke({'query':''})
-    found = research_tools.research_news.invoke({'query':'factory'})
+def test_search_budget_dates_and_tool_invocation(tmp_path):
+    news, _ = fake_news([
+        {'url':'https://example.com/good','title':'Good','content':'Evidence','published_date':'2026-09-29T01:00:00Z'},
+        {'url':'https://example.com/future','published_date':'2026-10-02T00:00:00Z'},
+        {'url':'https://example.com/unknown'}])
+    tools = research_tools.make_tools(research_tools.ResearchSession(date(2026,9,29), 1, news=news), tmp_path/'test.db')
+    assert 'error' in tools['research_news'].invoke({'query':''})
+    found = tools['research_news'].invoke({'query':'factory'})
     assert len(found['sources']) == 1
-    assert 'error' in research_tools.research_news.invoke({'query':'again'})
+    assert 'error' in tools['research_news'].invoke({'query':'again'})
     sid = found['sources'][0]['source_id']
-    assert research_tools.read_sources.invoke({'source_ids':[sid]})[sid]['title'] == 'Good'
-    assert 'error' in research_tools.read_sources.invoke({'source_ids':['missing']})['missing']
-    assert 'error' in research_tools.read_sources.invoke({'source_ids':[]})
+    assert tools['read_sources'].invoke({'source_ids':[sid]})[sid]['title'] == 'Good'
+    assert 'error' in tools['read_sources'].invoke({'source_ids':['missing']})['missing']
+    assert 'error' in tools['read_sources'].invoke({'source_ids':[]})
+    unconfigured = research_tools.ResearchSession(date(2026,9,29), 1)
+    assert unconfigured.search('factory') == {'error': 'News search is not configured.'}
 
 
 def gpr_response(monkeypatch, frame):
@@ -234,85 +284,97 @@ def test_gpr_prefers_real_date_over_numeric_day(tmp_path, monkeypatch):
     assert events_db.refresh_gpr(tmp_path/'test.db')['latest_observation'] == '2026-09-28'
 
 
-def test_html_report_puts_watch_list_first_and_escapes_text():
-    risky = {**event(), 'title': 'Plant <script>alert(1)</script> closure'}
-    page = render_html(Brief(events=[risky], limitations=['Fixture only']), evidence(), date(2026,9,29), ['abc123'])
+def test_html_report_puts_watch_list_first_and_escapes_text(tmp_path):
+    db = tmp_path/'test.db'
+    run_id, [event_id] = save(Brief(events=[{**event(), 'title': 'Plant <script>alert(1)</script> closure'}],
+                                    limitations=[]), date(2026,9,29), db)
+    page = render_html(run_view(run_id, db), date(2026,9,29), ['Fixture only'])
     assert page.index('Keep an eye on') < page.index('Details')
     assert '<script>' not in page and '&lt;script&gt;' in page
-    assert 'href="#abc123"' in page and 'id="abc123"' in page
+    assert f'href="#{event_id}"' in page and f'id="{event_id}"' in page
     assert 'https://example.com/report' in page and 'Fixture only' in page
 
 
-def test_render_uses_saved_sources_and_code_metrics():
-    result = render(Brief(events=[event()], limitations=['Fixture only']), evidence(), date(2026,9,29), ['test'])
-    assert 'https://example.com/report' in result
-    assert 'hypothesis' in result
-    assert 'Fixture only' in result
-
-
-def test_jev_batches_independent_questions(monkeypatch):
-    monkeypatch.setenv('TYPESAFE_API_KEY', 'test')
-    calls = []
-    class Response:
-        def model_dump(self, **kwargs):
-            return {'answers':{}, 'usage':{}}
-    class Client:
-        def __init__(self, **kwargs): pass
-        def __enter__(self): return self
-        def __exit__(self, *args): pass
-        def system_one(self, **kwargs):
-            calls.append(kwargs)
-            return Response()
-    monkeypatch.setattr(jev_api, 'TypeSafeClient', Client)
-    assert jev_api.classify(evidence())['status'] == 'ok'
-    assert len(calls) == 1
-    assert len(calls[0]['questions']) == 2
-    monkeypatch.delenv('TYPESAFE_API_KEY')
-    assert jev_api.classify(evidence())['status'] == 'not_configured'
-
-
-def test_runner_saves_validated_artifacts_without_live_model(tmp_path, monkeypatch):
-    from types import SimpleNamespace
-
-    monkeypatch.setenv('ANTHROPIC_API_KEY', 'test')
-    monkeypatch.setenv('TAVILY_API_KEY', 'test')
-    monkeypatch.setattr(cli, 'OUTPUT', tmp_path/'output')
-    monkeypatch.setattr(events_db, 'DB_PATH', tmp_path/'test.db')
-    def search(self, query, major_outlets_only=False):
-        self.calls += 1
-        self.evidence.update(evidence())
-        return {'sources':list(self.evidence.values())}
-    monkeypatch.setattr(research_tools.ResearchSession, 'search', search)
-    fake = SimpleNamespace(invoke=lambda *a, **k: {'structured_response':Brief(events=[event()], limitations=['Offline fixture'])})
-    monkeypatch.setattr(lead_agent, 'agent', fake)
-    monkeypatch.setattr(cli, 'listed', lambda symbols, as_of: (set(symbols), 'ok'))
-    monkeypatch.setattr(events_db, 'refresh_gdelt', lambda day: {'status': 'not_published'})
-    cli.main(['brief','fixture','--date','2026-09-29','--no-jev'])
-    files = list((tmp_path/'output').glob('*.json'))
-    assert len(files) == 1
-    content = json.loads(files[0].read_text())
-    assert content['brief']['events'][0]['title'] == 'Factory closure'
-    assert load_event(content['event_ids'][0], db=tmp_path/'test.db')['event']['title'] == 'Factory closure'
-    assert files[0].with_suffix('.md').exists()
-    assert files[0].with_suffix('.html').exists()
-
-
-def test_read_sql_is_read_only_and_uses_chinook_style_tables(tmp_path, monkeypatch):
+def test_report_lists_saved_sources_and_exposure_type(tmp_path):
     db = tmp_path/'test.db'
-    monkeypatch.setattr(events_db, 'DB_PATH', db)
-    save_run('brief', 'q', date(2026,9,29), Brief(events=[event()], limitations=[]), evidence(), 1, 'disabled')
-    result = research_tools.read_sql.invoke({'query': 'SELECT e.Title, x.SectorId FROM Event e '
-                                             'JOIN Assessment a USING (EventId) JOIN Exposure x USING (AssessmentId)'})
+    run_id, _ = save(Brief(events=[event()], limitations=[]), date(2026,9,29), db)
+    page = render_html(run_view(run_id, db), date(2026,9,29), ['Fixture only'])
+    assert 'https://example.com/report' in page and 'Fixture report' in page
+    assert '<td>hypothesis</td>' in page and 'tag new">New' in page
+    assert 'Fixture only' in page
+
+
+def citing(source_id):
+    """The fixture event, citing source_id everywhere."""
+    e = event()
+    e['source_ids'] = e['exposures'][0]['source_ids'] = e['tickers'][0]['source_ids'] = [source_id]
+    return e
+
+
+def test_runner_saves_validated_artifacts_with_stand_in_adapters(tmp_path):
+    db = tmp_path/'test.db'
+    news, _ = fake_news([{'url': 'https://example.com/report', 'title': 'Fixture report', 'content': 'Fixture',
+                          'published_date': '2026-09-29T10:00:00Z'}])
+    packets = []
+
+    def agent(tools):
+        assert set(tools) == {'research_news', 'read_sources', 'read_sql'}
+
+        def invoke(message, config):
+            # Like the lead: read the packet and cite a source the sweep retrieved.
+            packet = json.loads(message['messages'][0]['content'])
+            packets.append(packet)
+            source_id = packet['search_results'][0]['sources'][0]['source_id']
+            return {'structured_response': Brief(events=[citing(source_id)], limitations=['Offline fixture'])}
+        return SimpleNamespace(invoke=invoke)
+
+    prices = fake_prices(pd.DataFrame({'CAT': [1.0]}, index=pd.to_datetime(['2026-09-29'])))
+    adapters = brief_run.Adapters(news=news, agent=agent, prices=prices, jev=None, gdelt=lambda day: None, db=db)
+    result = brief_run.run(brief_run.Request(as_of=date(2026,9,29), question='fixture', jev=False), adapters)
+    assert packets[0]['gdelt']['refresh'] == 'not_published' and packets[0]['max_events'] == 5
+    assert result.judgements.status == 'disabled' and result.unlisted == []
+    report = save_reports(result, tmp_path/'output', db)
+    content = json.loads(report.with_suffix('.json').read_text())
+    assert content['brief']['events'][0]['title'] == 'Factory closure'
+    assert content['jev_judgements']['events'][0]['tickers'][0]['rank'] == 1
+    assert load_event(result.event_ids[0], db)['event']['title'] == 'Factory closure'
+    assert 'Offline fixture' in report.read_text() and report.with_suffix('.html').exists()
+
+
+def test_followup_run_reuses_the_event_and_measures_sector_windows(tmp_path):
+    db = tmp_path/'test.db'
+    _, [event_id] = save(Brief(events=[event()], limitations=[]), date(2026,9,29), db)
+    agent = lambda tools: SimpleNamespace(  # noqa: E731
+        invoke=lambda message, config: {'structured_response': Brief(events=[event()], limitations=[])})
+    close = pd.DataFrame({'XLI': [100.0, 103.0], 'SPY': [100.0, 101.0], 'CAT': [1.0, 1.0]},
+                         index=pd.to_datetime(['2026-09-29', '2026-09-30']))
+    adapters = brief_run.Adapters(news=fake_news([])[0], agent=agent, prices=fake_prices(close), jev=None,
+                                  gdelt=lambda day: None, db=db)
+    result = brief_run.run(brief_run.Request(as_of=date(2026,9,30), event_id=event_id, jev=False), adapters)
+    assert result.event_ids == [event_id]
+    assert [(m['ticker'], m['window']) for m in result.market['metrics']] == [('XLI', 'D0_to_D0')]
+    assert result.market['metrics'][0]['excess_percentage_points'] == pytest.approx(2.0)
+    assert run_view(result.run_id, db)[0]['update'] is True
+    with pytest.raises(ValueError, match='precedes'):
+        brief_run.run(brief_run.Request(as_of=date(2026,9,28), event_id=event_id), adapters)
+
+
+def test_read_sql_is_read_only_and_uses_chinook_style_tables(tmp_path):
+    db = tmp_path/'test.db'
+    save(Brief(events=[event()], limitations=[]), date(2026,9,29), db)
+    read_sql = research_tools.make_tools(research_tools.ResearchSession(date(2026,9,29)), db)['read_sql']
+    result = read_sql.invoke({'query': 'SELECT e.Title, x.SectorId FROM Event e '
+                              'JOIN Assessment a USING (EventId) JOIN Exposure x USING (AssessmentId)'})
     assert result.splitlines() == ['Title | SectorId', 'Factory closure | industrials']
-    assert 'XLE' in research_tools.read_sql.invoke({'query': "SELECT EtfTicker FROM Sector WHERE SectorId = 'energy'"})
-    assert research_tools.read_sql.invoke({'query': 'DELETE FROM Event'}).startswith('Error: only SELECT')
-    assert 'readonly' in research_tools.read_sql.invoke({'query': 'WITH x AS (SELECT 1) DELETE FROM Event'})
-    assert research_tools.read_sql.invoke({'query': 'SELECT * FROM NoSuchTable'}).startswith('Error')
+    assert 'XLE' in read_sql.invoke({'query': "SELECT EtfTicker FROM Sector WHERE SectorId = 'energy'"})
+    assert read_sql.invoke({'query': 'DELETE FROM Event'}).startswith('Error: only SELECT')
+    assert 'readonly' in read_sql.invoke({'query': 'WITH x AS (SELECT 1) DELETE FROM Event'})
+    assert read_sql.invoke({'query': 'SELECT * FROM NoSuchTable'}).startswith('Error')
 
 
 def test_today_uses_time_range_and_past_dates_use_a_date_range():
     # Live test on 30 Sep: a date range returned mostly older articles, time_range the newest.
-    today = research_tools.datetime.now(research_tools.TIMEZONE).date()
+    today = point_in_time.today()
 
     def window(as_of, since=None):
         return research_tools.ResearchSession(as_of, 1, since).date_window()
@@ -337,70 +399,53 @@ def test_claude_cost_prices_cache_reads_and_writes_separately():
     assert claude_cost_usd('unknown-model', usage) is None
 
 
-def fake_jev(monkeypatch, answers):
-    """Stand-in Jev client returning fixed raw answers. Returns the list of requests it received."""
-    monkeypatch.setenv('TYPESAFE_API_KEY', 'test')
-    calls = []
-    class Response:
-        def model_dump(self, **kwargs):
-            return {'model': 'jev-test', 'usage': {'input_tokens': 50, 'output_tokens': 5}, 'answers': answers}
-    class Client:
-        def __init__(self, **kwargs): pass
-        def __enter__(self): return self
-        def __exit__(self, *args): pass
-        def system_one(self, **kwargs):
-            calls.append(kwargs)
-            return Response()
-    monkeypatch.setattr(jev_api, 'TypeSafeClient', Client)
-    return calls
-
-
-def score(value):
-    return {'type': 'score', 'score': value, 'confidence': 0.7, 'legend': {}, 'probabilities': {}}
-
-
-def test_jev_assessment_asks_severity_direction_impact_and_ticker_fit_and_is_saved(tmp_path, monkeypatch):
-    calls = fake_jev(monkeypatch, {'e0_severity': score(2.2), 'e0_x0': {'type': 'choice', 'choice': 'down', 'confidence': 0.8},
-                                   'e0_x0_impact': score(0.9), 'e0_t0': score(2.6)})
+def test_jev_assessment_asks_severity_direction_impact_and_ticker_fit_and_is_saved(tmp_path):
+    call, calls = fake_jev({'e0_severity': score(2.2), 'e0_x0': {'type': 'choice', 'choice': 'down', 'confidence': 0.8},
+                            'e0_x0_impact': score(0.9), 'e0_t0': score(2.6)})
     brief = Brief(events=[event()], limitations=[])
-    result = jev_api.assess([jev_api.event_payload(brief.events[0].model_dump(mode='json'), evidence())])
+    result = jev_api.assess(payloads(brief), call)
     assert list(calls[0]['questions']) == ['e0_severity', 'e0_x0', 'e0_x0_impact', 'e0_t0']
     assert calls[0]['state']['events'][0]['sources'] == {'s1': 'Fixture'}
     assert calls[0]['state']['events'][0]['tickers'][0]['symbol'] == 'CAT'
-    assert result['answers']['e0_x0'] == {'direction': 'down', 'confidence': 0.8}
-    assert result['answers']['e0_severity'] == {'score': 2.2, 'level': 'high', 'confidence': 0.7}
-    assert result['answers']['e0_x0_impact']['level'] == 'small'
-    assert result['answers']['e0_t0']['level'] == 'core'
+    judged = result.events[0]
+    assert judged.exposures[0].direction == jev_api.Direction('down', 0.8)
+    assert judged.severity == jev_api.Level(2.2, 'high', 0.7)
+    assert judged.exposures[0].impact.level == 'small'
+    assert judged.tickers[0].fit.level == 'core' and judged.tickers[0].rank == 1
 
     db = tmp_path/'test.db'
-    usage = cli.usage_rows({'claude-sonnet-5-5': {'input_tokens': 1000, 'output_tokens': 100}},
-                           {'status': 'disabled'}, result, 3)
-    _, ids = save_run('brief', 'q', date(2026,9,29), brief, evidence(), 3, 'disabled', judgements=result, usage=usage, db=db)
+    usage = brief_run.usage_rows({'claude-sonnet-5-5': {'input_tokens': 1000, 'output_tokens': 100}}, result, 3)
+    _, ids = save(brief, date(2026,9,29), db, judgements=result, usage=usage)
     with sqlite3.connect(db) as con:
         assert con.execute('SELECT Direction, Confidence, Model FROM ExposureDirection').fetchall() == [('down', 0.8, 'jev-test')]
         assert con.execute('SELECT Level, Score FROM AssessmentSeverity').fetchall() == [('high', 2.2)]
         assert con.execute('SELECT Level FROM ExposureImpact').fetchall() == [('small',)]
         assert con.execute('SELECT Ticker, Rank, JevLevel FROM WatchTicker').fetchall() == [('CAT', 1, 'core')]
         assert {r[0] for r in con.execute('SELECT Service FROM RunUsage')} == {'anthropic', 'jev', 'tavily'}
-    assert load_event(ids[0], db)['event']['tickers'] == event()['tickers']
-    month = events_db.cost_summary(research_tools.datetime.now(research_tools.UTC).strftime('%Y-%m'), db=db)
+    fields = ('symbol', 'kind', 'name', 'reason', 'source_ids')
+    assert [{k: t[k] for k in fields} for t in load_event(ids[0], db)['event']['tickers']] == event()['tickers']
+    month = events_db.cost_summary(datetime.now(UTC).strftime('%Y-%m'), db=db)
     assert month['runs'] == 1 and month['claude_cost_usd'] == pytest.approx((1000 * 2 + 100 * 10) / 1e6, abs=1e-4)
+    failing = jev_api.assess(payloads(brief), lambda *a, **k: (_ for _ in ()).throw(TimeoutError()))
+    assert failing.status == 'unavailable' and failing.error_type == 'TimeoutError'
+    assert failing.events[0].tickers[0].rank == 1
 
 
-def test_scorecard_asks_jev_for_directions_only(monkeypatch):
-    calls = fake_jev(monkeypatch, {})
-    jev_api.assess([jev_api.event_payload(event(), evidence())], parts=('direction',))
+def test_scorecard_asks_jev_for_directions_only():
+    call, calls = fake_jev({})
+    jev_api.assess([jev_api.event_payload(event(), evidence())], call, parts=('direction',))
     assert list(calls[0]['questions']) == ['e0_x0']
 
 
 def test_top_three_tickers_follow_jev_fit_and_benchmarks_are_rejected():
     names = ['AAA', 'BBB', 'CCC', 'DDD']
     tickers = [{'symbol': n, 'kind': 'stock', 'name': n, 'reason': 'r', 'source_ids': ['s1']} for n in names]
-    answers = {'e0_t0': {'score': 0.5}, 'e0_t1': {'score': 2.9}, 'e0_t3': {'score': 1.5}}
-    ranked = jev_api.ranked_tickers({**event(), 'tickers': tickers}, 0, answers)
-    assert [(t['symbol'], t['rank']) for t in ranked] == [('BBB', 1), ('DDD', 2), ('AAA', 3), ('CCC', None)]
+    brief = Brief(events=[{**event(), 'tickers': tickers}], limitations=[])
+    ranked = scored(brief, {'e0_t0': score(0.5), 'e0_t1': score(2.9), 'e0_t3': score(1.5)}).events[0].tickers
+    assert [(names[t.index], t.rank) for t in ranked] == [('BBB', 1), ('DDD', 2), ('AAA', 3), ('CCC', None)]
     # Without Jev the lead's order decides.
-    assert [t['symbol'] for t in jev_api.ranked_tickers({**event(), 'tickers': tickers}, 0, {}) if t['rank']] == names[:3]
+    unranked = jev_api.unscored(payloads(brief)).events[0].tickers
+    assert [names[t.index] for t in unranked if t.rank] == names[:3]
 
     spy = Brief(events=[{**event(), 'tickers': [{**tickers[0], 'symbol': 'SPY'}]}], limitations=[])
     with pytest.raises(ValueError, match='Benchmark ticker'):
@@ -413,28 +458,26 @@ def test_top_three_tickers_follow_jev_fit_and_benchmarks_are_rejected():
         validate_brief(uncited, evidence(), date(2026,9,29), 5)
 
 
-def test_unlisted_tickers_are_dropped_before_jev(monkeypatch):
+def test_unlisted_tickers_are_dropped_before_jev():
     brief = Brief(events=[{**event(), 'tickers': [event()['tickers'][0], {**event()['tickers'][0], 'symbol': 'ZZZQ'}]}],
                   limitations=[])
-    monkeypatch.setattr(cli, 'listed', lambda symbols, as_of: ({'CAT'}, 'ok'))
-    assert cli.drop_unlisted_tickers(brief, date(2026,9,29)) == ['ZZZQ']
+    prices = fake_prices(pd.DataFrame({'CAT': [1.0]}, index=pd.to_datetime(['2026-09-29'])))
+    assert brief_run.drop_unlisted_tickers(brief, date(2026,9,29), prices) == ['ZZZQ']
     assert [t.symbol for t in brief.events[0].tickers] == ['CAT']
     assert 'ZZZQ' in brief.limitations[0]
 
 
-def test_html_orders_events_by_jev_severity_and_shows_metrics():
-    first, second = {**event(), 'title': 'Mild story'}, {**event(), 'title': 'Big story'}
-    judgements = {'answers': {'e0_severity': {'score': 0.4, 'level': 'minor'},
-                              'e1_severity': {'score': 2.8, 'level': 'severe'},
-                              'e1_x0_impact': {'score': 2.1, 'level': 'material'},
-                              'e1_t0': {'score': 3.0, 'level': 'core'}}}
-    brief = Brief(events=[first, second], limitations=[])
-    page = render_html(brief, evidence(), date(2026,9,29), ['a1', 'b2'], judgements=judgements)
+def test_html_orders_events_by_jev_severity_and_shows_metrics(tmp_path):
+    db = tmp_path/'test.db'
+    brief = Brief(events=[{**event(), 'title': 'Mild story'}, {**event(), 'title': 'Big story'}], limitations=[])
+    judgements = scored(brief, {'e0_severity': score(0.4), 'e1_severity': score(2.8),
+                                'e1_x0_impact': score(2.1), 'e1_t0': score(3.0)})
+    run_id, _ = save(brief, date(2026,9,29), db, judgements=judgements)
+    events = run_view(run_id, db)
+    page = render_html(events, date(2026,9,29), [])
     assert page.index('Big story') < page.index('Mild story')
     assert 'lvl-severe' in page and 'material' in page and '>CAT<' in page
-    text = render(brief, evidence(), date(2026,9,29), ['a1', 'b2'], judgements=judgements)
-    assert text.index('Big story') < text.index('Mild story')
-    assert 'Jev severity:** severe 2.8/3' in text and '1. **CAT**' in text
+    assert '2.8/3' in page and 'core' in page
 
 
 def test_scorecard_direction_hits_and_measure_start():
@@ -446,3 +489,21 @@ def test_scorecard_direction_hits_and_measure_start():
     assert measure_from('2026-02-28', '2026-09-17', date(2026,9,17)) == date(2026,9,17)
     assert measure_from('2026-09-16', '2026-09-17', date(2026,9,17)) == date(2026,9,16)
     assert measure_from(None, '2026-09-20', date(2026,9,17)) == date(2026,9,20)
+
+
+def test_digest_ranks_stories_by_peak_severity_and_keeps_each_day(tmp_path):
+    db = tmp_path/'test.db'
+    mild = Brief(events=[{**event(), 'title': 'Mild story'}], limitations=[])
+    _, [mild_id] = save(mild, date(2026,9,28), db, judgements=scored(mild, {'e0_severity': score(0.6)}))
+    big = Brief(events=[{**event(), 'title': 'Big story'}], limitations=[])
+    _, [big_id] = save(big, date(2026,9,28), db,
+                       judgements=scored(big, {'e0_severity': score(1.8), 'e0_t0': score(2.9)}))
+    again = Brief(events=[{**event(), 'title': 'Big story', 'tracked_event_id': big_id}], limitations=[])
+    save(again, date(2026,9,29), db, judgements=scored(again, {'e0_severity': score(2.7)}))
+    events = events_db.digest(date(2026,9,27), date(2026,9,30), db)
+    assert [x['event_id'] for x in events] == [big_id, mild_id]
+    assert events[0]['max_severity'] == 2.7 and set(events[0]['days']) == {'2026-09-28', '2026-09-29'}
+    assert events[0]['tickers'][0]['symbol'] == 'CAT' and events[0]['update'] is True
+    page = render_digest_html(events, date(2026,9,27), date(2026,9,30))
+    assert page.index('Big story') < page.index('Also tracked') < page.index('Mild story')
+    assert page.count('class="s-') == 2

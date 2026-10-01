@@ -2,13 +2,12 @@
 """The event-researcher subagent: investigates one event and its economic exposure.
 
 Patterns reused: scoped research subagent (m4.2).
-Run: registered by lead_agent.py; not run on its own.
+Run: built per run by lead_agent.build; not run on its own.
 """
 
 from langchain.agents.middleware import ModelCallLimitMiddleware
 
 from models import model
-from research_tools import read_sources, research_news
 
 RESEARCHER_PROMPT = """You investigate one event and its economic exposure.
 How to work:
@@ -23,11 +22,13 @@ Only report what the tools returned.
 """
 
 
-researcher = {
-    "name": "event-researcher",
-    "description": "Investigate one event and its economic exposure using dated news evidence.",
-    "system_prompt": RESEARCHER_PROMPT,
-    "tools": [research_news, read_sources],
-    "model": model,
-    "middleware": [ModelCallLimitMiddleware(run_limit=5, exit_behavior="error")],
-}
+def researcher(tools):
+    """The subagent spec for one run, given that run's tools from research_tools.make_tools."""
+    return {
+        "name": "event-researcher",
+        "description": "Investigate one event and its economic exposure using dated news evidence.",
+        "system_prompt": RESEARCHER_PROMPT,
+        "tools": [tools["research_news"], tools["read_sources"]],
+        "model": model,
+        "middleware": [ModelCallLimitMiddleware(run_limit=5, exit_behavior="error")],
+    }

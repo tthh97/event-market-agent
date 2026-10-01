@@ -1,5 +1,8 @@
 # market_returns.py
-"""Observed ETF returns, never causal estimates. Patterns reused: tools. Run: via followup."""
+"""Observed ETF returns, never causal estimates. Patterns reused: tools. Run: via followup.
+
+Prices come through a download adapter: yahoo_close live, a stand-in in tests.
+"""
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -7,6 +10,17 @@ import pandas as pd
 import yfinance as yf
 
 from models import SECTORS
+from point_in_time import last_closed_session_day
+
+
+def yahoo_close(tickers, start, end):
+    """The live adapter: adjusted daily closes, one column per ticker, end date exclusive."""
+    frame = yf.download(tickers, start=start.isoformat(), end=end.isoformat(),
+                        auto_adjust=True, progress=False, threads=False)
+    if frame.empty:
+        return pd.DataFrame()
+    close = frame["Close"]
+    return close.to_frame(tickers[0]) if isinstance(close, pd.Series) else close
 
 
 def calculate_windows(close, event_date, as_of):
@@ -39,25 +53,23 @@ def calculate_windows(close, event_date, as_of):
     return rows
 
 
-def reactions(event_date, sectors, as_of):
+def reactions(event_date, sectors, as_of, download):
     if not event_date:
         return {'status': 'unknown_event_date', 'metrics': []}
     unknown = set(sectors) - set(SECTORS)
     if unknown:
         raise ValueError(f'Unknown sectors: {sorted(unknown)}')
-    today_ny = datetime.now(ZoneInfo('America/New_York')).date()
     # Conservative: never mix partial current-session prices into daily returns.
-    cutoff = min(as_of, today_ny - timedelta(days=1))
+    cutoff = last_closed_session_day(as_of)
     if cutoff <= event_date or not sectors:
         return {'status': 'not_yet_observable', 'metrics': []}
     tickers = sorted({SECTORS[s] for s in sectors} | {'SPY'})
     try:
-        frame = yf.download(tickers, start=(event_date - timedelta(days=10)).isoformat(),
-                            end=(min(cutoff, event_date + timedelta(days=30)) + timedelta(days=1)).isoformat(),
-                            auto_adjust=True, progress=False, threads=False)
-        if frame.empty:
+        close = download(tickers, event_date - timedelta(days=10),
+                         min(cutoff, event_date + timedelta(days=30)) + timedelta(days=1))
+        if close.empty:
             return {'status': 'no_price_data', 'metrics': []}
-        metrics = calculate_windows(frame['Close'], event_date, cutoff)
+        metrics = calculate_windows(close, event_date, cutoff)
         return {'status': 'ok' if metrics else 'no_complete_window', 'metrics': metrics,
                 'source': 'Yahoo Finance via yfinance', 'retrieved_at': datetime.now(ZoneInfo('UTC')).isoformat(),
                 'timing': 'Date-only event: first strictly later trading session; current NY date excluded. Adjusted close returns. D0_to_D5 includes six sessions.',
@@ -66,7 +78,7 @@ def reactions(event_date, sectors, as_of):
         return {'status': 'unavailable', 'error_type': type(exc).__name__, 'metrics': []}
 
 
-def listed(symbols, as_of):
+def listed(symbols, as_of, download):
     """Which symbols have a Yahoo Finance close in the ten days to as_of. Catches invented tickers.
 
     Returns (found, status). On a download failure nothing can be checked and every symbol is kept.
@@ -75,14 +87,9 @@ def listed(symbols, as_of):
     if not symbols:
         return set(), 'ok'
     try:
-        frame = yf.download(symbols, start=(as_of - timedelta(days=10)).isoformat(),
-                            end=(as_of + timedelta(days=1)).isoformat(),
-                            auto_adjust=True, progress=False, threads=False)
+        close = download(symbols, as_of - timedelta(days=10), as_of + timedelta(days=1))
     except Exception as exc:
         return set(symbols), f'unavailable: {type(exc).__name__}'
-    if frame.empty:
+    if close.empty:
         return set(), 'ok'
-    close = frame['Close']
-    if isinstance(close, pd.Series):
-        close = close.to_frame(symbols[0])
     return {s for s in symbols if s in close.columns and close[s].notna().any()}, 'ok'

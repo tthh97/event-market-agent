@@ -20,8 +20,8 @@ from uuid import uuid4
 import httpx
 import pandas as pd
 
-from jev_api import ranked_tickers
-from models import ROOT, SECTORS, TIMEZONE, is_major_outlet
+from models import ROOT, SECTORS, is_major_outlet
+from point_in_time import known_by, parse_timestamp
 
 # EVENTS_DB points a run at another database file, e.g. a separate backfill.
 DB_PATH = ROOT / os.getenv("EVENTS_DB", "data/events.db")
@@ -86,7 +86,16 @@ def import_gdelt(path, db=None):
     return import_gdelt_text(path.read_text(encoding="utf-8"), path.name, db)
 
 
-def refresh_gdelt(day, db=None):
+def download_gdelt(day):
+    """The live GDELT adapter: the zipped daily export for one date, or None if not published yet."""
+    response = httpx.get(GDELT_DAILY.format(day=f"{day:%Y%m%d}"), follow_redirects=True, timeout=120)
+    if response.status_code == 404:
+        return None
+    response.raise_for_status()
+    return response.content
+
+
+def refresh_gdelt(day, db=None, download=download_gdelt):
     """Download and import the official GDELT daily export for one date.
 
     The file for a date is published around 07:00 UTC the next day. Before that it is not found.
@@ -95,18 +104,16 @@ def refresh_gdelt(day, db=None):
     with connect(db) as con:
         if con.execute("SELECT 1 FROM DataImport WHERE Source = 'gdelt' AND FileName = ?", [name]).fetchone():
             return {"status": "already_imported", "file": name}
-    url = GDELT_DAILY.format(day=f"{day:%Y%m%d}")
     try:
-        response = httpx.get(url, follow_redirects=True, timeout=120)
-        if response.status_code == 404:
+        content = download(day)
+        if content is None:
             return {"status": "not_published", "file": name,
                     "note": "GDELT publishes a day's export around 07:00 UTC the next day."}
-        response.raise_for_status()
-        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        with zipfile.ZipFile(io.BytesIO(content)) as archive:
             text = archive.read(archive.namelist()[0]).decode("utf-8")
     except (httpx.HTTPError, zipfile.BadZipFile) as exc:
         return {"status": "unavailable", "file": name, "error_type": type(exc).__name__}
-    return {**import_gdelt_text(text, name, db), "source": url}
+    return {**import_gdelt_text(text, name, db), "source": GDELT_DAILY.format(day=f"{day:%Y%m%d}")}
 
 
 def import_gdelt_text(text, name, db=None):
@@ -213,7 +220,7 @@ def gpr_context(as_of, db=None):
     if retrieved_at is None:
         return {"status": "not_downloaded", "source": GPR_SOURCE, "note": "Run refresh-gpr for official index context."}
     # A snapshot downloaded later cannot show what was known on an earlier date.
-    if datetime.fromisoformat(retrieved_at).astimezone(TIMEZONE).date() > as_of:
+    if not known_by(parse_timestamp(retrieved_at), as_of):
         return {"status": "excluded_for_historical_as_of", "source": GPR_SOURCE,
                 "note": "Snapshot retrieved after requested date; not valid point-in-time evidence."}
     return {"status": "ok" if latest else "no_observation", "latest": dict(latest) if latest else None,
@@ -225,13 +232,12 @@ def gpr_context(as_of, db=None):
 # Runs, events and assessments ------------------------------------------------
 
 
-def save_run(kind, question, as_of, brief, evidence, search_calls, jev_status,
-             event_id=None, market_metrics=(), judgements=None, usage=(), db=None):
-    """Save one run. A follow-up passes event_id and appends an Assessment to that Event.
+def save_run(kind, question, as_of, brief, evidence, search_calls, jev_status, judgements,
+             market_metrics=(), usage=(), db=None):
+    """Save one run. An event with tracked_event_id appends an Assessment to that saved Event.
 
-    A brief event with tracked_event_id appends to that saved Event instead of creating one.
-    judgements is jev_api.assess() output (answers keyed e{i}_severity, e{i}_x{j}, e{i}_x{j}_impact,
-    e{i}_t{k}); usage is a list of RunUsage row dicts.
+    judgements is jev_api.Judgements, one EventJudgement per brief event, with tickers in rank order.
+    usage is a list of RunUsage row dicts. market_metrics belong to a follow-up's single event.
     Returns (run_id, event_ids) with one event ID per brief event.
     """
     run_id = uuid4().hex
@@ -245,10 +251,8 @@ def save_run(kind, question, as_of, brief, evidence, search_calls, jev_status,
                          source["published_at"], source.get("retrieved_at", now_utc()), source.get("excerpt", "")])
             con.execute("INSERT OR IGNORE INTO RunSource VALUES (?, ?)", [run_id, source["source_id"]])
 
-        answers = (judgements or {}).get("answers", {})
-        jev_model = (judgements or {}).get("model", "jev")
-        for i, event in enumerate(brief.events):
-            key = event_id or event.tracked_event_id or uuid4().hex[:12]
+        for event, judged in zip(brief.events, judgements.events, strict=True):
+            key = event.tracked_event_id or uuid4().hex[:12]
             event_ids.append(key)
             event_date = str(event.event_date) if event.event_date else None
             con.execute("INSERT OR IGNORE INTO Event VALUES (?, ?, ?, ?)", [key, event.title, event_date, str(as_of)])
@@ -261,31 +265,32 @@ def save_run(kind, question, as_of, brief, evidence, search_calls, jev_status,
                  event.uncertainty, event.watch_next, event.status]).lastrowid
             con.executemany("INSERT OR IGNORE INTO AssessmentSource VALUES (?, ?)",
                             [(assessment_id, s) for s in event.source_ids])
-            if severity := answers.get(f"e{i}_severity"):
+            if severity := judged.severity:
                 con.execute("INSERT INTO AssessmentSeverity VALUES (?, ?, ?, ?, ?, ?)",
-                            [assessment_id, severity["score"], severity["level"], severity.get("confidence"),
-                             jev_model, now_utc()])
-            for t in ranked_tickers(event.model_dump(mode="json"), i, answers):
-                jev = t["jev"] or {}
+                            [assessment_id, severity.score, severity.level, severity.confidence,
+                             judgements.model, now_utc()])
+            # Rank order, so unranked tickers also keep Jev's order by WatchTickerId.
+            for judged_ticker in judged.tickers:
+                t, fit = event.tickers[judged_ticker.index], judged_ticker.fit
                 ticker_id = con.execute(
                     "INSERT INTO WatchTicker (AssessmentId, Ticker, Kind, Name, Reason, Rank, JevScore, JevLevel, "
                     "JevConfidence) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [assessment_id, t["symbol"], t["kind"], t["name"], t["reason"], t["rank"],
-                     jev.get("score"), jev.get("level"), jev.get("confidence")]).lastrowid
+                    [assessment_id, t.symbol, t.kind, t.name, t.reason, judged_ticker.rank,
+                     fit and fit.score, fit and fit.level, fit and fit.confidence]).lastrowid
                 con.executemany("INSERT OR IGNORE INTO WatchTickerSource VALUES (?, ?)",
-                                [(ticker_id, s) for s in t["source_ids"]])
-            for j, exposure in enumerate(event.exposures):
+                                [(ticker_id, s) for s in t.source_ids])
+            for exposure, judged_exposure in zip(event.exposures, judged.exposures, strict=True):
                 exposure_id = con.execute(
                     "INSERT INTO Exposure (AssessmentId, SectorId, Channel, Reasoning, Status) VALUES (?, ?, ?, ?, ?)",
                     [assessment_id, exposure.sector, exposure.channel, exposure.reasoning, exposure.status]).lastrowid
                 con.executemany("INSERT OR IGNORE INTO ExposureSource VALUES (?, ?)",
                                 [(exposure_id, s) for s in exposure.source_ids])
-                if f"e{i}_x{j}" in answers:
-                    save_direction(con, exposure_id, answers[f"e{i}_x{j}"], jev_model)
-                if impact := answers.get(f"e{i}_x{j}_impact"):
+                if judged_exposure.direction:
+                    save_direction(con, exposure_id, judged_exposure.direction, judgements.model)
+                if impact := judged_exposure.impact:
                     con.execute("INSERT INTO ExposureImpact VALUES (?, ?, ?, ?, ?, ?)",
-                                [exposure_id, impact["score"], impact["level"], impact.get("confidence"),
-                                 jev_model, now_utc()])
+                                [exposure_id, impact.score, impact.level, impact.confidence,
+                                 judgements.model, now_utc()])
             con.executemany(
                 "INSERT INTO MarketWindow (AssessmentId, Ticker, WindowName, BaselineDate, StartSession, "
                 "EndSession, ReturnPct, SpyReturnPct, ExcessPp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -299,9 +304,10 @@ def save_run(kind, question, as_of, brief, evidence, search_calls, jev_status,
     return run_id, event_ids
 
 
-def save_direction(con, exposure_id, answer, model):
+def save_direction(con, exposure_id, direction, model):
+    """direction is a jev_api.Direction."""
     con.execute("INSERT OR REPLACE INTO ExposureDirection VALUES (?, ?, ?, ?, ?)",
-                [exposure_id, answer["direction"], answer.get("confidence"), model, now_utc()])
+                [exposure_id, direction.direction, direction.confidence, model, now_utc()])
 
 
 def cost_summary(month, db=None):
@@ -327,59 +333,21 @@ def cost_summary(month, db=None):
 
 
 def load_event(event_id, db=None):
-    """Latest assessment of a saved event, in the Brief Event shape, plus its cited sources."""
+    """Latest assessment view of a saved event, plus every source any of its assessments cited."""
     with connect(db) as con:
-        row = con.execute("""
-            SELECT a.AssessmentId, a.Title, a.Category, a.Summary, a.WhyWatch, a.Uncertainty,
-                   a.WatchNext, a.Status, e.EventDate, r.AsOf
-            FROM Assessment a
-            JOIN Event e ON e.EventId = a.EventId
-            JOIN Run r ON r.RunId = a.RunId
-            WHERE a.EventId = ?
-            ORDER BY r.CreatedAt DESC, a.AssessmentId DESC
-            LIMIT 1""", [event_id]).fetchone()
-        if not row:
+        latest = con.execute("""
+            SELECT a.AssessmentId, r.AsOf FROM Assessment a JOIN Run r USING (RunId)
+            WHERE a.EventId = ? ORDER BY r.CreatedAt DESC, a.AssessmentId DESC LIMIT 1""", [event_id]).fetchone()
+        if not latest:
             raise ValueError("Unknown saved event ID. Run list first.")
-        assessment_id = row["AssessmentId"]
-        source_ids = [r[0] for r in con.execute(
-            "SELECT SourceId FROM AssessmentSource WHERE AssessmentId = ? ORDER BY SourceId", [assessment_id])]
-        exposures = []
-        for x in con.execute("SELECT * FROM Exposure WHERE AssessmentId = ? ORDER BY ExposureId", [assessment_id]):
-            cited = [r[0] for r in con.execute(
-                "SELECT SourceId FROM ExposureSource WHERE ExposureId = ? ORDER BY SourceId", [x["ExposureId"]])]
-            exposures.append({"sector": x["SectorId"], "channel": x["Channel"], "reasoning": x["Reasoning"],
-                              "status": x["Status"], "source_ids": cited})
-        tickers = []
-        for t in con.execute("SELECT * FROM WatchTicker WHERE AssessmentId = ? ORDER BY Rank IS NULL, Rank, "
-                             "WatchTickerId", [assessment_id]):
-            cited = [r[0] for r in con.execute(
-                "SELECT SourceId FROM WatchTickerSource WHERE WatchTickerId = ? ORDER BY SourceId", [t["WatchTickerId"]])]
-            tickers.append({"symbol": t["Ticker"], "kind": t["Kind"], "name": t["Name"], "reason": t["Reason"],
-                            "source_ids": cited})
-        # Every source cited by any earlier assessment of this event.
-        sources = con.execute("""
-            SELECT DISTINCT s.* FROM Source s
-            WHERE s.SourceId IN (
-                SELECT asrc.SourceId FROM AssessmentSource asrc
-                JOIN Assessment a ON a.AssessmentId = asrc.AssessmentId WHERE a.EventId = ?
-                UNION
-                SELECT esrc.SourceId FROM ExposureSource esrc
-                JOIN Exposure x ON x.ExposureId = esrc.ExposureId
-                JOIN Assessment a ON a.AssessmentId = x.AssessmentId WHERE a.EventId = ?
-                UNION
-                SELECT tsrc.SourceId FROM WatchTickerSource tsrc
-                JOIN WatchTicker t ON t.WatchTickerId = tsrc.WatchTickerId
-                JOIN Assessment a ON a.AssessmentId = t.AssessmentId WHERE a.EventId = ?)""",
-            [event_id, event_id, event_id]).fetchall()
-    event = {"tracked_event_id": event_id, "title": row["Title"], "event_date": row["EventDate"],
-             "summary": row["Summary"], "category": row["Category"], "why_watch": row["WhyWatch"], "source_ids": source_ids,
-             "exposures": exposures, "tickers": tickers, "uncertainty": row["Uncertainty"], "watch_next": row["WatchNext"],
-             "status": row["Status"]}
-    evidence = {s["SourceId"]: {"source_id": s["SourceId"], "url": s["Url"], "title": s["Title"],
-                                "major_outlet": is_major_outlet(s["Url"]),
-                                "published_at": s["PublishedAt"], "retrieved_at": s["RetrievedAt"],
-                                "excerpt": s["Excerpt"]} for s in sources}
-    return {"event_id": event_id, "event": event, "evidence": evidence, "as_of": row["AsOf"]}
+        ids = [r[0] for r in con.execute("SELECT AssessmentId FROM Assessment WHERE EventId = ?", [event_id])]
+        cited = list(dict.fromkeys(s["source_id"] for i in ids for s in assessment_view(con, i)["sources"]))
+        sources = con.execute(f"SELECT * FROM Source WHERE SourceId IN ({','.join('?' * len(cited))})", cited)
+        evidence = {s["SourceId"]: {"source_id": s["SourceId"], "url": s["Url"], "title": s["Title"],
+                                    "major_outlet": is_major_outlet(s["Url"]), "published_at": s["PublishedAt"],
+                                    "retrieved_at": s["RetrievedAt"], "excerpt": s["Excerpt"]} for s in sources}
+        event = assessment_view(con, latest["AssessmentId"])
+    return {"event_id": event_id, "event": event, "evidence": evidence, "as_of": latest["AsOf"]}
 
 
 def get_event(event_id, db=None):
@@ -389,34 +357,118 @@ def get_event(event_id, db=None):
     return dict(row) if row else None
 
 
-def saved_events(as_of, limit=20, db=None):
-    """Events assessed on or before as_of, newest first. Given to the lead so it can spot repeats."""
+def saved_events(as_of=None, limit=None, db=None):
+    """Saved events, latest assessment first. With as_of, only assessments made on or before it count."""
     with connect(db) as con:
         rows = con.execute("""
-            SELECT e.EventId, e.Title, e.EventDate, max(r.AsOf) AS LastAssessedOn
-            FROM Event e
-            JOIN Assessment a ON a.EventId = e.EventId
-            JOIN Run r ON r.RunId = a.RunId
+            SELECT e.EventId, e.Title, e.EventDate, max(r.AsOf) AS LastAssessedOn, count(*) AS Assessments
+            FROM Event e JOIN Assessment a USING (EventId) JOIN Run r USING (RunId)
             WHERE r.AsOf <= ?
             GROUP BY e.EventId
             ORDER BY LastAssessedOn DESC, e.EventId
-            LIMIT ?""", [str(as_of), limit]).fetchall()
-    return [dict(r) for r in rows]
-
-
-def list_events(db=None):
-    """Saved events, newest assessment first."""
-    with connect(db) as con:
-        rows = con.execute("""
-            SELECT e.EventId AS event_id, max(r.AsOf) AS as_of, e.Title AS title,
-                   count(a.AssessmentId) AS assessments
-            FROM Event e
-            JOIN Assessment a ON a.EventId = e.EventId
-            JOIN Run r ON r.RunId = a.RunId
-            GROUP BY e.EventId
-            ORDER BY as_of DESC, e.EventId""").fetchall()
+            LIMIT ?""", [str(as_of or "9999-12-31"), limit or -1]).fetchall()
     return [dict(r) for r in rows]
 
 
 def parse_day(value):
     return date.fromisoformat(value) if value else None
+
+
+def assessment_view(con, assessment_id):
+    """One saved assessment as every reader sees it: the event, Jev scores, exposures, tickers, sources.
+
+    It also has the Brief Event fields, so a follow-up and Jev can read it directly.
+
+    severity, impact, direction and fit are None without a Jev answer. tickers are in rank order,
+    rank None beyond the top three. update is True when the event had an earlier assessment.
+    """
+    a = con.execute("""
+        SELECT a.AssessmentId, a.EventId, a.Title, a.Category, a.Summary, a.WhyWatch, a.Uncertainty,
+               a.WatchNext, a.Status, e.EventDate, s.Score, s.Level,
+               EXISTS (SELECT 1 FROM Assessment p WHERE p.EventId = a.EventId
+                       AND p.AssessmentId < a.AssessmentId) AS IsUpdate
+        FROM Assessment a JOIN Event e USING (EventId)
+        LEFT JOIN AssessmentSeverity s USING (AssessmentId)
+        WHERE a.AssessmentId = ?""", [assessment_id]).fetchone()
+
+    def level(score, name):
+        return None if score is None else {"score": score, "level": name}
+
+    exposures = []
+    for x in con.execute("""
+            SELECT x.ExposureId, x.SectorId, x.Channel, x.Reasoning, x.Status, i.Score, i.Level,
+                   d.Direction, d.Confidence
+            FROM Exposure x LEFT JOIN ExposureImpact i USING (ExposureId)
+            LEFT JOIN ExposureDirection d USING (ExposureId)
+            WHERE x.AssessmentId = ? ORDER BY x.ExposureId""", [assessment_id]):
+        exposures.append({
+            "exposure_id": x["ExposureId"], "sector": x["SectorId"], "channel": x["Channel"], "reasoning": x["Reasoning"], "status": x["Status"],
+            "impact": level(x["Score"], x["Level"]),
+            "direction": x["Direction"] and {"direction": x["Direction"], "confidence": x["Confidence"]},
+            "source_ids": [r[0] for r in con.execute(
+                "SELECT SourceId FROM ExposureSource WHERE ExposureId = ? ORDER BY rowid", [x["ExposureId"]])]})
+    tickers = [{"symbol": t["Ticker"], "kind": t["Kind"], "name": t["Name"], "reason": t["Reason"],
+                "rank": t["Rank"], "fit": level(t["JevScore"], t["JevLevel"]),
+                "source_ids": [r[0] for r in con.execute("SELECT SourceId FROM WatchTickerSource WHERE WatchTickerId = ? "
+                                                         "ORDER BY rowid", [t["WatchTickerId"]])]}
+               for t in con.execute("SELECT * FROM WatchTicker WHERE AssessmentId = ? "
+                                    "ORDER BY Rank IS NULL, Rank, WatchTickerId", [assessment_id])]
+    # Cited sources, first-cited order: the event's own, then its exposures', then its tickers'.
+    cited = con.execute("""
+        SELECT SourceId FROM (
+            SELECT SourceId, 0 AS part, rowid AS n FROM AssessmentSource WHERE AssessmentId = ?
+            UNION ALL
+            SELECT es.SourceId, 1, es.rowid FROM ExposureSource es JOIN Exposure x USING (ExposureId)
+            WHERE x.AssessmentId = ?
+            UNION ALL
+            SELECT ts.SourceId, 2, ts.rowid FROM WatchTickerSource ts JOIN WatchTicker t USING (WatchTickerId)
+            WHERE t.AssessmentId = ?)
+        ORDER BY part, n""", [assessment_id] * 3).fetchall()
+    sources = []
+    for source_id in dict.fromkeys(r[0] for r in cited):
+        src = con.execute("SELECT * FROM Source WHERE SourceId = ?", [source_id]).fetchone()
+        sources.append({"source_id": source_id, "url": src["Url"], "title": src["Title"],
+                        "published_at": src["PublishedAt"], "major_outlet": is_major_outlet(src["Url"])})
+    return {"event_id": a["EventId"], "assessment_id": a["AssessmentId"], "title": a["Title"],
+            "event_date": a["EventDate"], "summary": a["Summary"], "category": a["Category"],
+            "why_watch": a["WhyWatch"], "uncertainty": a["Uncertainty"], "watch_next": a["WatchNext"],
+            "status": a["Status"], "update": bool(a["IsUpdate"]), "severity": level(a["Score"], a["Level"]),
+            "source_ids": [r[0] for r in con.execute(
+                "SELECT SourceId FROM AssessmentSource WHERE AssessmentId = ? ORDER BY rowid", [assessment_id])],
+            "exposures": exposures, "tickers": tickers, "sources": sources}
+
+
+def run_view(run_id, db=None):
+    """Every assessment saved by one run, highest Jev severity first, then the lead's order."""
+    with connect(db) as con:
+        ids = [r[0] for r in con.execute("""
+            SELECT a.AssessmentId FROM Assessment a LEFT JOIN AssessmentSeverity s USING (AssessmentId)
+            WHERE a.RunId = ? ORDER BY coalesce(s.Score, 0) DESC, a.AssessmentId""", [run_id])]
+        return [assessment_view(con, i) for i in ids]
+
+
+def digest(start, end, db=None):
+    """Every event assessed between start and end: its latest assessment view plus severity per day.
+
+    Severity, impact and tickers come from Jev and are empty for runs made without it.
+    """
+    with connect(db) as con:
+        days = con.execute("""
+            SELECT a.EventId, r.AsOf, a.AssessmentId, s.Score, s.Level
+            FROM Assessment a JOIN Run r USING (RunId)
+            LEFT JOIN AssessmentSeverity s USING (AssessmentId)
+            WHERE r.AsOf BETWEEN ? AND ?
+            ORDER BY a.EventId, r.AsOf, r.CreatedAt""", [str(start), str(end)]).fetchall()
+        events = {}
+        for d in days:
+            item = events.setdefault(d["EventId"], {"days": {}})
+            # A later run on the same day replaces the earlier one.
+            item["days"][d["AsOf"]] = {"score": d["Score"], "level": d["Level"]}
+            item["latest_assessment"] = d["AssessmentId"]
+        stories = []
+        for item in events.values():
+            scores = [d["score"] for d in item["days"].values() if d["score"] is not None]
+            stories.append({**assessment_view(con, item["latest_assessment"]), "days": item["days"],
+                            "max_severity": max(scores) if scores else None,
+                            "first_seen": min(item["days"]), "last_seen": max(item["days"])})
+    return sorted(stories, key=lambda e: (-(e["max_severity"] or 0), -len(e["days"]), e["title"]))

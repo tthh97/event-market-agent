@@ -1,14 +1,16 @@
-# brief_report.py
-"""Render a validated Brief, market windows and GPR context as Markdown and as a standalone HTML page.
+"""Render saved assessments as a standalone HTML brief page and as a date-range digest.
 
+Every report renders from events_db assessment views, so a page shows exactly what was saved.
 Patterns reused: host-side output (m4.2).
-Run: called by cli.py.
+Run: save_reports is called by cli.py after a run; render_digest_html by the digest command.
 """
 
+import json
+from dataclasses import asdict
+from datetime import date, datetime, timedelta
 from html import escape
 
 import events_db
-from jev_api import ranked_tickers
 from models import TIMEZONE
 
 # Printed under every report, after the agent's own limitations.
@@ -24,97 +26,21 @@ FIXED_LIMITS = [
 ]
 
 
-def answers_of(judgements):
-    return (judgements or {}).get("answers", {})
-
-
-def direction_text(judgements, i, j):
-    a = answers_of(judgements).get(f"e{i}_x{j}")
-    if not a:
-        return ""
-    conf = f", {a['confidence']:.2f}" if a.get("confidence") is not None else ""
-    return f"{a['direction']}{conf}"
-
 
 def score_text(judgement):
     """e.g. "high 2.1/3", or "" without a Jev answer."""
     return f"{judgement['level']} {judgement['score']:.1f}/3" if judgement else ""
 
 
-def watch_order(brief, judgements):
-    """Event indexes by Jev severity, highest first. Without severity the lead's order stands."""
-    answers = answers_of(judgements)
-    return sorted(range(len(brief.events)),
-                  key=lambda i: -(answers.get(f"e{i}_severity") or {}).get("score", 0))
+def direction_text(direction):
+    if not direction:
+        return ""
+    conf = f", {direction['confidence']:.2f}" if direction.get("confidence") is not None else ""
+    return f"{direction['direction']}{conf}"
 
 
-def top_tickers(event, i, judgements):
-    return [t for t in ranked_tickers(event.model_dump(mode="json"), i, answers_of(judgements)) if t["rank"]]
-
-
-def render(brief, evidence, as_of, ids, market=None, gpr=None, judgements=None):
-    lines = [f"# Event brief: {as_of}", "",
-             f"Day boundaries: {TIMEZONE.key}. Sector exposures are assessments, not price predictions.", ""]
-    if not brief.events:
-        lines += ["No sufficiently supported events were selected.", ""]
-    else:
-        lines += ["Events are ordered by Jev severity, highest first.", ""]
-    for i in watch_order(brief, judgements):
-        event, event_id = brief.events[i], ids[i]
-        label = "Update to saved event" if event.tracked_event_id else "New saved event"
-        lines += [f"## {event.title}", "",
-                  f"{label}: `{event_id}` | Status: {event.status} | Event date: {event.event_date or 'unknown'}", "",
-                  event.summary, "", f"**Why watch:** {event.why_watch}", ""]
-        severity = score_text(answers_of(judgements).get(f"e{i}_severity"))
-        if severity:
-            lines += [f"**Jev severity:** {severity}", ""]
-        lines += ["**Potential sector exposure**", ""]
-        for j, exposure in enumerate(event.exposures):
-            citations = ", ".join(f"[{s}]({evidence[s]['url']})" for s in exposure.source_ids)
-            jev = direction_text(judgements, i, j)
-            impact = score_text(answers_of(judgements).get(f"e{i}_x{j}_impact"))
-            lines.append(f"- **{exposure.sector.replace('_', ' ')}** ({exposure.status}): "
-                         f"{exposure.channel}. {exposure.reasoning} {citations}"
-                         + (f" Jev impact: {impact}." if impact else "")
-                         + (f" Jev expects vs SPY: {jev}." if jev else ""))
-        if not event.exposures:
-            lines.append("No sector exposure established from the available evidence.")
-        lines += ["", "**Top tickers to watch**", ""]
-        for t in top_tickers(event, i, judgements):
-            fit = score_text(t["jev"])
-            lines.append(f"{t['rank']}. **{t['symbol']}** ({t['kind']}, {t['name']}): {t['reason']}"
-                         + (f" Jev exposure: {fit}." if fit else ""))
-        if not event.tickers:
-            lines.append("No directly exposed stock or ETF named.")
-        lines += ["", f"**Uncertainty:** {event.uncertainty}", "", f"**Watch next:** {event.watch_next}", "",
-                  "**Sources**", ""]
-        for sid in cited_sources(event):
-            src = evidence[sid]
-            lines.append(f"- [{src['title']}]({src['url']}) - published {src['published_at']} ({sid})")
-        lines.append("")
-    if market:
-        lines += ["## Observed market reaction", "", f"Status: {market['status']}", ""]
-        if market.get("metrics"):
-            lines += ["| ETF | Window | Baseline | End | Return | SPY | Difference |",
-                      "|---|---|---|---|---:|---:|---:|"]
-            for row in market["metrics"]:
-                lines.append(f"| {row['ticker']} | {row['window']} | {row['baseline_date']} | {row['end_session']} | "
-                             f"{row['return_pct']:.2f}% | {row['spy_return_pct']:.2f}% | {row['excess_percentage_points']:.2f} pp |")
-        lines += ["", market.get("timing", ""), "", market.get("limitation", ""), "",
-                  "Price source: Yahoo Finance via yfinance. Raw metrics and retrieval time are saved in the companion JSON.", ""]
-    if gpr:
-        lines += ["## GPR context", "", f"Status: {gpr['status']}", "", gpr.get("note", ""), ""]
-        if gpr.get("latest"):
-            lines += [f"Latest eligible observation: {gpr['latest']['date']}; GPRD: {gpr['latest']['gprd']:.2f}.", ""]
-        lines += [f"[Official GPR source]({events_db.GPR_SOURCE}) - Caldara and Iacoviello.", ""]
-    lines += ["## Limits", ""] + [f"- {x}" for x in brief.limitations]
-    lines += [f"- {x}" for x in FIXED_LIMITS]
-    return "\n".join(lines) + "\n"
-
-
-def cited_sources(event):
-    """Source IDs cited by an event, its exposures and its tickers, in first-cited order."""
-    return list(dict.fromkeys(event.source_ids + [s for x in [*event.exposures, *event.tickers] for s in x.source_ids]))
+def top(tickers):
+    return [t for t in tickers if t["rank"]]
 
 
 HTML_STYLE = """
@@ -162,82 +88,80 @@ code { font: 13px ui-monospace, Menlo, monospace; }
 MAJOR_TAG = ' <span class="tag update">major outlet</span>'
 
 
-def render_html(brief, evidence, as_of, ids, market=None, gpr=None, judgements=None):
-    """The same report as render(), as one self-contained HTML page with a scored watch list first."""
+def level_span(judgement):
+    if not judgement:
+        return '<span class="muted">no Jev score</span>'
+    return (f'<span class="lvl-{escape(judgement["level"])}">{escape(judgement["level"])}</span> '
+            f'<span class="muted">{judgement["score"]:.1f}/3</span>')
+
+
+def sector_list(exposures):
+    items = []
+    for x in exposures:
+        arrow = {"up": " &#9650; vs SPY", "down": " &#9660; vs SPY"}.get((x["direction"] or {}).get("direction"), "")
+        hyp = ' <span class="muted">(hypothesis)</span>' if x["status"] == "hypothesis" else ""
+        items.append(f'<li>{escape(x["sector"].replace("_", " ").title())}{hyp}: '
+                     f'{level_span(x["impact"])}<span class="muted dir">{arrow}</span></li>')
+    return f'<ul class="pills">{"".join(items)}</ul>' if items else '<p class="muted">None established</p>'
+
+
+def ticker_list(tickers):
+    items = [f'<li><span class="ticker">{escape(t["symbol"])}</span> <span class="muted">{escape(t["kind"])}</span> '
+             f'{level_span(t["fit"])}</li>' for t in top(tickers)]
+    return f'<ul class="pills">{"".join(items)}</ul>' if items else '<p class="muted">None named</p>'
+
+
+def render_html(events, as_of, limitations, market=None, gpr=None):
+    """One run's assessment views as a self-contained HTML page, scored watch list first."""
     e = escape
-    answers = answers_of(judgements)
-    order = watch_order(brief, judgements)
 
-    def level_span(judgement):
-        if not judgement:
-            return '<span class="muted">no Jev score</span>'
-        return (f'<span class="lvl-{e(judgement["level"])}">{e(judgement["level"])}</span> '
-                f'<span class="muted">{judgement["score"]:.1f}/3</span>')
-
-    def sector_list(i, event):
-        items = []
-        for j, x in enumerate(event.exposures):
-            direction = (answers.get(f"e{i}_x{j}") or {}).get("direction")
-            arrow = {"up": " &#9650; vs SPY", "down": " &#9660; vs SPY"}.get(direction, "")
-            hyp = ' <span class="muted">(hypothesis)</span>' if x.status == "hypothesis" else ""
-            items.append(f'<li>{e(x.sector.replace("_", " ").title())}{hyp}: '
-                         f'{level_span(answers.get(f"e{i}_x{j}_impact"))}<span class="muted dir">{arrow}</span></li>')
-        return f'<ul class="pills">{"".join(items)}</ul>' if items else '<p class="muted">None established</p>'
-
-    def ticker_list(i, event):
-        items = [f'<li><span class="ticker">{e(t["symbol"])}</span> <span class="muted">{e(t["kind"])}</span> '
-                 f'{level_span(t["jev"])}</li>' for t in top_tickers(event, i, judgements)]
-        return f'<ul class="pills">{"".join(items)}</ul>' if items else '<p class="muted">None named</p>'
-
-    def kind_tag(event):
-        return '<span class="tag update">Update</span>' if event.tracked_event_id else '<span class="tag new">New</span>'
+    def kind_tag(x):
+        return '<span class="tag update">Update</span>' if x["update"] else '<span class="tag new">New</span>'
 
     watch = []
-    for i in order:
-        event, event_id = brief.events[i], ids[i]
-        severity = answers.get(f"e{i}_severity")
+    for x in events:
+        severity = x["severity"]
         bar = (f'<div class="bar"><span class="lvl-{e(severity["level"])}" '
                f'style="width:{max(4, severity["score"] / 3 * 100):.0f}%"></span></div>') if severity else ""
         watch.append(
-            f'<li class="card"><h3><a href="#{e(event_id)}">{e(event.title)}</a></h3>'
-            f'<div class="tags">{kind_tag(event)}<span class="tag">{e(event.status)}</span>'
-            f'<span class="tag">{e(event.category)}</span></div>'
+            f'<li class="card"><h3><a href="#{e(x["event_id"])}">{e(x["title"])}</a></h3>'
+            f'<div class="tags">{kind_tag(x)}<span class="tag">{e(x["status"])}</span>'
+            f'<span class="tag">{e(x["category"])}</span></div>'
             f'<div class="metrics"><div class="metric"><div class="label">Severity</div>'
             f'<div class="value">{level_span(severity)}</div>{bar}</div>'
-            f'<div class="metric"><div class="label">Sector impact</div>{sector_list(i, event)}</div>'
-            f'<div class="metric"><div class="label">Top tickers</div>{ticker_list(i, event)}</div></div>'
-            f'<p>{e(event.why_watch)}</p><p class="muted"><b>Check next:</b> {e(event.watch_next)}</p></li>')
+            f'<div class="metric"><div class="label">Sector impact</div>{sector_list(x["exposures"])}</div>'
+            f'<div class="metric"><div class="label">Top tickers</div>{ticker_list(x["tickers"])}</div></div>'
+            f'<p>{e(x["why_watch"])}</p><p class="muted"><b>Check next:</b> {e(x["watch_next"])}</p></li>')
     watch = "".join(watch) or '<div class="card">No sufficiently supported events were selected.</div>'
 
     details = []
-    for i in order:
-        event, event_id = brief.events[i], ids[i]
+    for x in events:
         rows = "".join(
-            f"<tr><td>{e(x.sector.replace('_', ' ').title())}</td><td>{e(x.channel)}</td>"
-            f"<td>{'reported' if x.status == 'reported_exposure' else 'hypothesis'}</td>"
-            f"<td>{e(score_text(answers.get(f'e{i}_x{j}_impact'))) or '-'}</td>"
-            f"<td>{e(direction_text(judgements, i, j)) or '-'}</td><td>{e(x.reasoning)}</td></tr>"
-            for j, x in enumerate(event.exposures)) or '<tr><td colspan="6">No sector exposure established.</td></tr>'
+            f"<tr><td>{e(s['sector'].replace('_', ' ').title())}</td><td>{e(s['channel'])}</td>"
+            f"<td>{'reported' if s['status'] == 'reported_exposure' else 'hypothesis'}</td>"
+            f"<td>{e(score_text(s['impact'])) or '-'}</td>"
+            f"<td>{e(direction_text(s['direction'])) or '-'}</td><td>{e(s['reasoning'])}</td></tr>"
+            for s in x["exposures"]) or '<tr><td colspan="6">No sector exposure established.</td></tr>'
         tickers = "".join(
             f"<tr><td>{t['rank'] or '-'}</td><td><span class=\"ticker\">{e(t['symbol'])}</span></td><td>{e(t['name'])}</td>"
-            f"<td>{e(t['kind'])}</td><td>{e(score_text(t['jev'])) or '-'}</td><td>{e(t['reason'])}</td></tr>"
-            for t in ranked_tickers(event.model_dump(mode="json"), i, answers)
+            f"<td>{e(t['kind'])}</td><td>{e(score_text(t['fit'])) or '-'}</td><td>{e(t['reason'])}</td></tr>"
+            for t in x["tickers"]
         ) or '<tr><td colspan="6">No directly exposed stock or ETF named.</td></tr>'
         sources = "".join(
-            f'<li><a href="{e(evidence[s]["url"])}" target="_blank" rel="noopener">{e(evidence[s]["title"] or evidence[s]["url"])}</a>'
-            f'{MAJOR_TAG if evidence[s].get("major_outlet") else ""}'
-            f' <span class="muted">published {e(evidence[s]["published_at"][:16].replace("T", " "))} UTC</span></li>'
-            for s in cited_sources(event))
+            f'<li><a href="{e(s["url"])}" target="_blank" rel="noopener">{e(s["title"] or s["url"])}</a>'
+            f'{MAJOR_TAG if s["major_outlet"] else ""}'
+            f' <span class="muted">published {e(s["published_at"][:16].replace("T", " "))} UTC</span></li>'
+            for s in x["sources"])
         details.append(
-            f'<section class="card" id="{e(event_id)}"><h3>{e(event.title)}</h3>'
-            f'<div class="tags">{kind_tag(event)}<span class="tag"><code>{e(event_id)}</code></span>'
-            f'<span class="tag">started {e(str(event.event_date or "unknown"))}</span><span class="tag">{e(event.category)}</span></div>'
-            f'<p>{e(event.summary)}</p>'
+            f'<section class="card" id="{e(x["event_id"])}"><h3>{e(x["title"])}</h3>'
+            f'<div class="tags">{kind_tag(x)}<span class="tag"><code>{e(x["event_id"])}</code></span>'
+            f'<span class="tag">started {e(str(x["event_date"] or "unknown"))}</span><span class="tag">{e(x["category"])}</span></div>'
+            f'<p>{e(x["summary"])}</p>'
             f'<div class="table-wrap"><table><thead><tr><th>Sector</th><th>Channel</th><th>Type</th><th>Jev impact</th>'
             f'<th>Jev vs SPY</th><th>Reasoning</th></tr></thead><tbody>{rows}</tbody></table></div>'
             f'<div class="table-wrap"><table><thead><tr><th>Rank</th><th>Ticker</th><th>Name</th><th>Kind</th>'
             f'<th>Jev exposure</th><th>Reason</th></tr></thead><tbody>{tickers}</tbody></table></div>'
-            f'<p><b>Uncertainty:</b> {e(event.uncertainty)}</p><p class="muted">Sources</p><ul>{sources}</ul></section>')
+            f'<p><b>Uncertainty:</b> {e(x["uncertainty"])}</p><p class="muted">Sources</p><ul>{sources}</ul></section>')
 
     extra = ""
     if market and market.get("metrics"):
@@ -253,7 +177,7 @@ def render_html(brief, evidence, as_of, ids, market=None, gpr=None, judgements=N
         value = f"Latest eligible GPRD: {latest['gprd']:.2f} on {latest['date']}. " if latest else ""
         extra += (f'<h2>Geopolitical risk context</h2><div class="card"><p>{e(value)}{e(gpr.get("note", ""))}</p>'
                   f'<p class="muted">Status: {e(gpr["status"])}. <a href="{events_db.GPR_SOURCE}">Official GPR source</a>, Caldara and Iacoviello.</p></div>')
-    limits = "".join(f"<li>{e(x)}</li>" for x in [*brief.limitations, *FIXED_LIMITS])
+    limits = "".join(f"<li>{e(x)}</li>" for x in [*limitations, *FIXED_LIMITS])
 
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -268,5 +192,117 @@ not measured price impact. Selection is the lead agent's judgement.</p>
 <h2>Details</h2>{"".join(details)}
 {extra}
 <h2>Limits</h2><div class="card"><ul>{limits}</ul></div>
+</main></body></html>
+"""
+
+
+def save_reports(result, output_dir, db=None):
+    """Write one run's .html report and .json record next to each other. Returns the .html path."""
+    events = events_db.run_view(result.run_id, db)
+    output_dir.mkdir(exist_ok=True)
+    destination = output_dir / f"{result.as_of}-{result.run_id[:8]}"
+    artifact = {"brief": result.brief.model_dump(mode="json"), "event_ids": result.event_ids,
+                "sources": result.evidence, "jev_judgements": asdict(result.judgements),
+                "unlisted_tickers": result.unlisted, "usage": result.usage, "gpr": result.gpr,
+                "market": result.market, "search_calls": result.search_calls, "as_of": str(result.as_of),
+                "timezone": TIMEZONE.key, "created_at": datetime.now(TIMEZONE).isoformat()}
+    destination.with_suffix(".json").write_text(json.dumps(artifact, indent=2), encoding="utf-8")
+    destination.with_suffix(".html").write_text(
+        render_html(events, result.as_of, result.brief.limitations, result.market, result.gpr), encoding="utf-8")
+    return destination.with_suffix(".html")
+
+
+DIGEST_STYLE = """
+:root { --sev-minor: #86b6ef; --sev-moderate: #3987e5; --sev-high: #1c5cab; --sev-severe: #0d366b; }
+@media (prefers-color-scheme: dark) {
+  :root { --sev-minor: #184f95; --sev-moderate: #2a78d6; --sev-high: #6da7ec; --sev-severe: #b7d3f6; } }
+.strip { display: grid; grid-template-columns: repeat(var(--days), 1fr); gap: 2px; margin: 10px 0 2px; }
+.strip span { height: 14px; border-radius: 3px; background: var(--track); }
+.strip .s-minor { background: var(--sev-minor); } .strip .s-moderate { background: var(--sev-moderate); }
+.strip .s-high { background: var(--sev-high); } .strip .s-severe { background: var(--sev-severe); }
+.strip .s-none { background: var(--muted); }
+.strip-axis { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
+.nowrap { white-space: nowrap; }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+.summary { display: flex; flex-wrap: wrap; gap: 24px; margin: 8px 0 4px; }
+.summary b { display: block; font-size: 26px; font-variant-numeric: tabular-nums; }
+"""
+
+SEVERITY_LEVELS = ("minor", "moderate", "high", "severe")
+
+
+def render_digest_html(events, start, end):
+    """One page for a date range: stories at high or severe first, each with its day-by-day severity."""
+    e = escape
+    first, last = date.fromisoformat(str(start)), date.fromisoformat(str(end))
+    days = [str(first + timedelta(n)) for n in range((last - first).days + 1)]
+    aware = [x for x in events if (x["max_severity"] or 0) >= 1.5]
+    rest = [x for x in events if (x["max_severity"] or 0) < 1.5]
+
+    def peak(x):
+        """Level in ink with a swatch from the strip's ramp, so it reads with the strip."""
+        if x["max_severity"] is None:
+            return '<span class="muted">no Jev score</span>'
+        lvl = SEVERITY_LEVELS[min(3, round(x["max_severity"]))]
+        return (f'<span class="nowrap"><i class="swatch" style="background:var(--sev-{lvl})"></i>{lvl} '
+                f'<span class="muted">{x["max_severity"]:.1f}/3</span></span>')
+
+    def strip(x):
+        cells = []
+        for d in days:
+            day = x["days"].get(d)
+            if not day:
+                cells.append(f'<span title="{d}: not reported"></span>')
+            elif day["level"]:
+                cells.append(f'<span class="s-{e(day["level"])}" title="{d}: {e(day["level"])} {day["score"]:.1f}/3"></span>')
+            else:
+                cells.append(f'<span class="s-none" title="{d}: reported, no Jev score"></span>')
+        return (f'<div class="strip" style="--days:{len(days)}" role="img" '
+                f'aria-label="Severity by day, {len(x["days"])} days reported">{"".join(cells)}</div>'
+                f'<div class="strip-axis"><span>{e(days[0][5:])}</span><span>{e(days[-1][5:])}</span></div>')
+
+    cards = "".join(
+        f'<li class="card"><h3>{e(x["title"])}</h3>'
+        f'<div class="tags"><span class="tag">{e(x["category"])}</span><span class="tag">{e(x["status"])}</span>'
+        f'<span class="tag">reported {len(x["days"])} day{"s" if len(x["days"]) != 1 else ""}, '
+        f'{e(x["first_seen"][5:])} to {e(x["last_seen"][5:])}</span>'
+        f'<span class="tag"><code>{e(x["event_id"])}</code></span></div>'
+        f'{strip(x)}'
+        f'<div class="metrics"><div class="metric"><div class="label">Peak severity</div><div class="value">{peak(x)}</div></div>'
+        f'<div class="metric"><div class="label">Sector impact (latest)</div>{sector_list(x["exposures"])}</div>'
+        f'<div class="metric"><div class="label">Top tickers (latest)</div>{ticker_list(x["tickers"])}</div></div>'
+        f'<p>{e(x["why_watch"])}</p><p class="muted"><b>Check next:</b> {e(x["watch_next"])}</p></li>'
+        for x in aware) or '<div class="card">No story reached high severity in this range.</div>'
+    rows = "".join(
+        f'<tr><td>{e(x["title"])}</td><td>{peak(x)}</td><td>{len(x["days"])}</td><td class="nowrap">{e(x["last_seen"])}</td>'
+        f'<td>{", ".join(e(t["symbol"]) for t in top(x["tickers"])) or "-"}</td></tr>' for x in rest)
+    legend = "".join(f'<span><i style="background:var(--sev-{lvl})"></i>{lvl}</span>' for lvl in SEVERITY_LEVELS)
+    legend += ('<span><i style="background:var(--muted)"></i>reported, no score</span>'
+               '<span><i style="background:var(--track)"></i>not reported</span>')
+
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Event Digest {e(days[0])} to {e(days[-1])}</title><style>{HTML_STYLE}{DIGEST_STYLE}</style></head>
+<body><main>
+<h1>What to be aware of</h1>
+<p class="muted">{e(days[0])} to {e(days[-1])}. One brief per day, up to three events each, day boundaries {e(TIMEZONE.key)}.</p>
+<div class="summary"><div><b>{len(events)}</b><span class="muted">stories tracked</span></div>
+<div><b>{len(aware)}</b><span class="muted">reached high or severe</span></div>
+<div><b>{sum(len(x["days"]) > 1 for x in events)}</b><span class="muted">reported on more than one day</span></div></div>
+<h2>Be aware of</h2>
+<p class="muted">Stories whose Jev severity reached high (1.5/3) or more on any day, highest peak first.
+Each strip has one cell per day, coloured by that day's severity. Sectors and tickers are from the latest assessment.</p>
+<div class="legend">{legend}</div>
+<ol class="watch">{cards}</ol>
+<h2>Also tracked</h2>
+<div class="card table-wrap"><table><thead><tr><th>Story</th><th>Peak severity</th><th>Days</th><th>Last seen</th><th>Top tickers</th></tr></thead>
+<tbody>{rows or '<tr><td colspan="5">None.</td></tr>'}</tbody></table></div>
+<h2>Limits</h2><div class="card"><ul>
+<li>Severity, impact and ticker ranks are Jev judgements from news text, not measured market impact.</li>
+<li>Backfilled days were researched after the fact. Web pages may have been edited since publication, so this is not a point-in-time record.</li>
+<li>At most three stories per day were selected. Anything the lead agent did not pick is missing.</li>
+</ul></div>
 </main></body></html>
 """

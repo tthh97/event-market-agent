@@ -1,14 +1,12 @@
-# research_tools.py
-"""Tools the agents call: dated Tavily news search, source lookup, read-only SQL.
+"""Tools the agents call: dated news search, source lookup, read-only SQL.
 
 Patterns reused: custom @tool functions (m1.5).
-Run: imported by lead_agent.py and researcher_subagent.py. cli.py sets SESSION per run.
+Run: brief_run.py creates one ResearchSession per run and builds the tools with make_tools.
 """
 
 import hashlib
 import os
-from datetime import UTC, datetime, time, timedelta
-from email.utils import parsedate_to_datetime
+from datetime import UTC, datetime, timedelta
 from threading import Lock
 
 from langchain_core.tools import tool
@@ -16,31 +14,26 @@ from langsmith import traceable
 from tavily import TavilyClient
 
 import events_db
-from models import MAJOR_OUTLETS, TIMEZONE, is_major_outlet
+from models import MAJOR_OUTLETS, is_major_outlet
+from point_in_time import known_by, local_day, parse_timestamp, today
 
-# Research session: one per run, shared by the lead and the researcher.
 
-
-def parse_published(value):
-    if not value:
-        return None
-    try:
-        result = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-    except ValueError:
-        try:
-            result = parsedate_to_datetime(str(value))
-        except (ValueError, TypeError):
-            return None
-    return result.replace(tzinfo=UTC) if result.tzinfo is None else result
+def tavily_search(query, **params):
+    """The live news adapter: one Tavily news search, the raw response dict."""
+    return TavilyClient(api_key=os.environ["TAVILY_API_KEY"]).search(query=query, **params)
 
 
 class ResearchSession:
-    """Search budget and dated source registry. Only sources in `evidence` may be cited."""
+    """Search budget and dated source registry for one run, shared by the lead and the researcher.
 
-    def __init__(self, as_of, max_calls=6, since=None):
+    Only sources in `evidence` may be cited. news is tavily_search or a stand-in; None disables search.
+    """
+
+    def __init__(self, as_of, max_calls=6, since=None, news=None):
         self.as_of = as_of
         self.since = since or as_of
         self.max_calls = max_calls
+        self.news = news
         self.calls = 0
         self.evidence = {}
         self.excluded = 0
@@ -52,9 +45,9 @@ class ResearchSession:
         A date range returns mostly older articles, so a window ending today uses
         time_range, which returns the newest. Past dates keep the date range.
         """
-        today = datetime.now(TIMEZONE).date()
-        if self.as_of == today:
-            days = (today - self.since).days
+        current = today()
+        if self.as_of == current:
+            days = (current - self.since).days
             for name, span in (("day", 1), ("week", 7), ("month", 31)):
                 if days < span:
                     return {"time_range": name}
@@ -66,26 +59,24 @@ class ResearchSession:
     def search(self, query, major_outlets_only=False):
         if not query.strip() or len(query) > 600:
             return {"error": "Provide a non-empty query of at most 600 characters."}
-        if not os.getenv("TAVILY_API_KEY"):
-            return {"error": "TAVILY_API_KEY is not configured."}
+        if self.news is None:
+            return {"error": "News search is not configured."}
         with self.lock:
             if self.calls >= self.max_calls:
                 return {"error": "Search-call limit reached; use existing evidence or report uncertainty."}
             self.calls += 1
-        end_of_day = datetime.combine(self.as_of + timedelta(days=1), time.min, TIMEZONE)
-        cutoff = min(datetime.now(UTC), end_of_day.astimezone(UTC))
         try:
-            result = TavilyClient(api_key=os.environ["TAVILY_API_KEY"]).search(
-                query=query, topic="news", search_depth="basic", max_results=10,
+            result = self.news(
+                query, topic="news", search_depth="basic", max_results=10,
                 include_answer=False, include_raw_content=False, timeout=30, **self.date_window(),
                 **({"include_domains": MAJOR_OUTLETS} if major_outlets_only else {}))
         except Exception as exc:
             return {"error": f"Search unavailable ({type(exc).__name__}); do not infer missing facts."}
         found = []
         for item in result.get("results", []):
-            timestamp = parse_published(item.get("published_date"))
+            timestamp = parse_timestamp(item.get("published_date"))
             # Unknown publication dates do not satisfy temporal grounding.
-            if timestamp is None or timestamp >= cutoff or timestamp.astimezone(TIMEZONE).date() < self.since:
+            if timestamp is None or not known_by(timestamp, self.as_of) or local_day(timestamp) < self.since:
                 self.excluded += 1
                 continue
             url = item.get("url", "")
@@ -104,8 +95,6 @@ class ResearchSession:
                 "note": "Search excerpts are evidence leads. Publication filtering does not prove an unrevised historical webpage."}
 
 
-SESSION = None  # set by cli.py before each invoke
-
 # Short topic queries for the first sweep. One long keyword query returned 0 of 6
 # usable results in a live test; these returned 3 to 10 each.
 TOPIC_QUERIES = [
@@ -117,43 +106,42 @@ TOPIC_QUERIES = [
 ]
 
 
-@tool
-def research_news(query: str) -> dict:
-    """Search dated news evidence for this run. Use to verify an event or sector exposure; cite returned source IDs.
+def make_tools(session, db=None):
+    """The agents' tools for one run, bound to its session and database."""
 
-    Use short, specific queries of under 10 words, such as "Raytheon AMRAAM contract". Search calls are capped.
-    """
-    if SESSION is None:
-        return {"error": "Research session is not initialized by the runner."}
-    return SESSION.search(query)
+    @tool
+    def research_news(query: str) -> dict:
+        """Search dated news evidence for this run. Use to verify an event or sector exposure; cite returned source IDs.
 
+        Use short, specific queries of under 10 words, such as "Raytheon AMRAAM contract". Search calls are capped.
+        """
+        return session.search(query)
 
-@tool
-def read_sources(source_ids: list[str]) -> dict:
-    """Read exact retrieved source excerpts by ID before citing them. Unknown IDs are reported, never fabricated."""
-    if SESSION is None:
-        return {"error": "Research session is not initialized."}
-    if not source_ids or len(source_ids) > 20:
-        return {"error": "Provide between 1 and 20 source IDs."}
-    return {key: SESSION.evidence.get(key, {"error": "Unknown source ID"}) for key in source_ids}
+    @tool
+    def read_sources(source_ids: list[str]) -> dict:
+        """Read exact retrieved source excerpts by ID before citing them. Unknown IDs are reported, never fabricated."""
+        if not source_ids or len(source_ids) > 20:
+            return {"error": "Provide between 1 and 20 source IDs."}
+        return {key: session.evidence.get(key, {"error": "Unknown source ID"}) for key in source_ids}
 
+    @tool
+    def read_sql(query: str) -> str:
+        """Run one read-only SELECT against data/events.db and return up to 50 rows.
 
-@tool
-def read_sql(query: str) -> str:
-    """Run one read-only SELECT against data/events.db and return up to 50 rows.
+        Use it to see earlier assessments of a story (Event, Assessment, Exposure), extra GDELT
+        leads (GdeltEvent) or GPR history (GprDaily). Tables are PascalCase and singular.
+        """
+        if not query.lstrip().lower().startswith(("select", "with")):
+            return "Error: only SELECT queries are allowed."
+        try:
+            columns, rows, truncated = events_db.read_only_query(query, db)
+        except Exception as exc:
+            return f"Error: {exc}"
+        # Long text cells (article excerpts) are cut so one query cannot flood the context.
+        lines = [" | ".join(columns)]
+        lines += [" | ".join(str(v)[:300] for v in row) for row in rows]
+        if truncated:
+            lines.append("(more rows exist; add a WHERE clause or LIMIT)")
+        return "\n".join(lines)
 
-    Use it to see earlier assessments of a story (Event, Assessment, Exposure), extra GDELT
-    leads (GdeltEvent) or GPR history (GprDaily). Tables are PascalCase and singular.
-    """
-    if not query.lstrip().lower().startswith(("select", "with")):
-        return "Error: only SELECT queries are allowed."
-    try:
-        columns, rows, truncated = events_db.read_only_query(query)
-    except Exception as exc:
-        return f"Error: {exc}"
-    # Long text cells (article excerpts) are cut so one query cannot flood the context.
-    lines = [" | ".join(columns)]
-    lines += [" | ".join(str(v)[:300] for v in row) for row in rows]
-    if truncated:
-        lines.append("(more rows exist; add a WHERE clause or LIMIT)")
-    return "\n".join(lines)
+    return {"research_news": research_news, "read_sources": read_sources, "read_sql": read_sql}

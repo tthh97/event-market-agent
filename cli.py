@@ -1,7 +1,7 @@
-# cli.py
 """Command line for the event agent: import data, run briefs and follow-ups, list saved events.
 
-Patterns reused: trusted host runner (m4.2). Host code validates, saves and renders results.
+Patterns reused: trusted host runner (m4.2). brief_run.py runs the brief; this file wires the live
+adapters, writes the reports and prints.
 Run:
     uv run cli.py --help
 """
@@ -12,138 +12,37 @@ import os
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
-from langchain_core.callbacks import get_usage_metadata_callback
-from langsmith import traceable
-
+import brief_run
 import events_db
 import lead_agent
-import research_tools
-from brief_checks import validate_brief
-from brief_report import render, render_html
-from brief_schema import Brief
-from jev_api import assess, classify, event_payload
-from market_returns import listed, reactions
-from models import MONTHLY_BUDGET_USD, ROOT, TIMEZONE, claude_cost_usd
+from brief_report import render_digest_html, save_reports
+from jev_api import typesafe_call
+from market_returns import yahoo_close
+from models import MONTHLY_BUDGET_USD, ROOT, TIMEZONE
+from research_tools import tavily_search
 
 OUTPUT = ROOT / "output"
 
 
-# One LangSmith trace per brief. The searches, Jev and checks run outside the agent,
-# so without this only the agent call appeared in LangSmith.
-@traceable(name="Event brief", run_type="chain", process_inputs=lambda inputs: vars(inputs["args"]))
-def run_brief(args):
-    as_of = args.date
-    if as_of > datetime.now(TIMEZONE).date():
-        raise ValueError("Cannot research a future as-of date.")
+def live_adapters():
+    """Real Tavily, Claude, Yahoo, Jev, GDELT and the configured database. Jev only with its key."""
     missing = [k for k in ("ANTHROPIC_API_KEY", "TAVILY_API_KEY") if not os.getenv(k)]
     if missing:
         raise ValueError("Live agent requires " + ", ".join(missing)
                          + " in the environment or project .env. Offline commands remain available.")
-    prior = events_db.load_event(args.event_id) if args.command == "followup" else None
-    if prior and as_of < date.fromisoformat(prior["as_of"]):
-        raise ValueError("Follow-up date precedes the saved assessment. Historical replay is not supported.")
-
-    session = research_tools.SESSION = research_tools.ResearchSession(
-        as_of, args.max_searches, since=date.fromisoformat(prior["as_of"]) if prior else as_of)
-    if prior:
-        session.evidence.update(prior["evidence"])
-        question = f"What changed for saved event {prior['event_id']}: {prior['event']['title']}"
-        queries = [prior["event"]["title"][:200]]
-    else:
-        question = args.question
-        # Leave at least one search for the researcher.
-        queries = research_tools.TOPIC_QUERIES[:max(1, args.max_searches - 1)]
-    # The first sweep reads major outlets only. The researcher searches the open web.
-    search_results = [session.search(q, major_outlets_only=not prior) for q in queries]
-    # Fetch the day's GDELT leads if published. Missing or failed downloads leave the brief to Tavily.
-    gdelt_refresh = events_db.refresh_gdelt(as_of)
-    jev = classify(session.evidence) if args.jev else {"status": "disabled"}
-    packet = {"question": question, "as_of": str(as_of), "timezone": TIMEZONE.key,
-              "max_events": 1 if prior else args.limit,
-              "gdelt": {**events_db.candidates(as_of), "refresh": gdelt_refresh["status"]},
-              "saved_events": events_db.saved_events(as_of),
-              "search_results": search_results, "jev": jev, "prior_event": prior}
-
-    # Counts tokens for the lead and the researcher subagent, per model.
-    with get_usage_metadata_callback() as usage_callback:
-        result = lead_agent.agent.invoke({"messages": [{"role": "user", "content": json.dumps(packet)}]},
-                                         config={"recursion_limit": 45, "max_concurrency": 1})
-    output = result.get("structured_response")
-    if output is None:
-        raise ValueError("Agent returned no structured response; nothing was saved.")
-    brief = Brief.model_validate(output)
-    validate_brief(brief, session.evidence, as_of, packet["max_events"], prior)
-    if prior:
-        brief.events[0].tracked_event_id = prior["event_id"]
-    unlisted = drop_unlisted_tickers(brief, as_of)
-    # From the event text only, before any prices: Jev judges severity, each sector's direction vs SPY
-    # and size of impact, and how directly each ticker is exposed. The top three tickers are kept in rank.
-    jev_judgements = (assess([event_payload(e.model_dump(mode="json"), session.evidence) for e in brief.events])
-                      if args.jev else {"status": "disabled", "answers": {}})
-    usage = usage_rows(usage_callback.usage_metadata, jev, jev_judgements, session.calls)
-
-    market = None
-    if prior:
-        original_date = prior["event"]["event_date"]
-        tracked = {x["sector"] for x in prior["event"]["exposures"]} | {x.sector for x in brief.events[0].exposures}
-        market = reactions(events_db.parse_day(original_date), sorted(tracked), as_of)
-    gpr = events_db.gpr_context(as_of)
-    run_id, ids = events_db.save_run(
-        args.command, question, as_of, brief, session.evidence, session.calls, jev["status"],
-        event_id=args.event_id if prior else None, market_metrics=market["metrics"] if market else (),
-        judgements=jev_judgements, usage=usage)
-
-    OUTPUT.mkdir(exist_ok=True)
-    artifact = {"brief": brief.model_dump(mode="json"), "event_ids": ids, "sources": session.evidence,
-                "jev": jev, "jev_judgements": jev_judgements, "unlisted_tickers": unlisted, "usage": usage,
-                "gpr": gpr, "market": market, "search_calls": session.calls,
-                "as_of": str(as_of), "timezone": TIMEZONE.key, "created_at": datetime.now(TIMEZONE).isoformat()}
-    destination = OUTPUT / f"{as_of}-{run_id[:8]}"
-    destination.with_suffix(".json").write_text(json.dumps(artifact, indent=2), encoding="utf-8")
-    destination.with_suffix(".md").write_text(
-        render(brief, session.evidence, as_of, ids, market, gpr, jev_judgements), encoding="utf-8")
-    destination.with_suffix(".html").write_text(
-        render_html(brief, session.evidence, as_of, ids, market, gpr, jev_judgements), encoding="utf-8")
-    print(f"Saved {destination.with_suffix('.md')} and {destination.with_suffix('.html').name}")
-    cost = sum(u["cost_usd"] or 0 for u in usage)
-    print(json.dumps({"event_ids": ids, "search_calls": session.calls, "jev": jev["status"],
-                      "jev_judgements": jev_judgements["status"], "unlisted_tickers": unlisted,
-                      "claude_cost_usd": round(cost, 4)}, indent=2))
+    return brief_run.Adapters(news=tavily_search, agent=lead_agent.build, prices=yahoo_close,
+                              jev=typesafe_call if os.getenv("TYPESAFE_API_KEY") else None,
+                              gdelt=events_db.download_gdelt, db=events_db.DB_PATH)
 
 
-def drop_unlisted_tickers(brief, as_of):
-    """Remove tickers with no recent Yahoo Finance price and note it in the brief's limitations."""
-    found, status = listed([t.symbol for e in brief.events for t in e.tickers], as_of)
-    dropped = []
-    for event in brief.events:
-        dropped += [t.symbol for t in event.tickers if t.symbol not in found]
-        event.tickers = [t for t in event.tickers if t.symbol in found]
-    if dropped:
-        brief.limitations.append(f"Dropped tickers with no recent price, likely not listed: {', '.join(dropped)}.")
-    if status != "ok":
-        brief.limitations.append(f"Ticker listing check {status}. Tickers are unchecked.")
-    return dropped
-
-
-def usage_rows(claude_usage, jev, jev_judgements, search_calls):
-    """RunUsage rows: one per Claude model, one for Jev (both calls), one for Tavily."""
-    rows = []
-    for model_name, u in claude_usage.items():
-        details = u.get("input_token_details") or {}
-        rows.append({"service": "anthropic", "model": model_name, "calls": None,
-                     "input_tokens": u.get("input_tokens"), "output_tokens": u.get("output_tokens"),
-                     "cache_read_tokens": details.get("cache_read") or 0,
-                     "cache_write_tokens": sum(details.get(k) or 0 for k in
-                                               ("cache_creation", "ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens")),
-                     "cost_usd": claude_cost_usd(model_name, u)})
-    jev_usages = [(jev.get("result") or {}).get("usage") or {}, jev_judgements.get("usage") or {}]
-    jev_calls = sum(1 for status in (jev.get("status"), jev_judgements.get("status")) if status == "ok")
-    if jev_calls:
-        rows.append({"service": "jev", "model": (jev.get("result") or {}).get("model") or jev_judgements.get("model", "jev"),
-                     "calls": jev_calls, "input_tokens": sum(u.get("input_tokens", 0) for u in jev_usages),
-                     "output_tokens": sum(u.get("output_tokens", 0) for u in jev_usages), "cost_usd": None})
-    rows.append({"service": "tavily", "model": "search", "calls": search_calls, "cost_usd": None})
-    return rows
+def run_and_report(request, adapters):
+    result = brief_run.run(request, adapters)
+    report = save_reports(result, OUTPUT, adapters.db)
+    print(f"Saved {report} and {report.with_suffix('.json').name}")
+    cost = sum(u["cost_usd"] or 0 for u in result.usage)
+    print(json.dumps({"event_ids": result.event_ids, "search_calls": result.search_calls,
+                      "jev": result.judgements.status,
+                      "unlisted_tickers": result.unlisted, "claude_cost_usd": round(cost, 4)}, indent=2))
 
 
 def main(argv=None):
@@ -159,6 +58,9 @@ def main(argv=None):
                        help="Event date, default yesterday UTC (published about 07:00 UTC the next day)")
     subs.add_parser("refresh-gpr", help="Download the official daily GPR series into data/events.db.")
     subs.add_parser("list", help="List saved assessed events.")
+    dig = subs.add_parser("digest", help="HTML page of the stories to be aware of over a date range.")
+    dig.add_argument("--start", type=date.fromisoformat, required=True)
+    dig.add_argument("--end", type=date.fromisoformat, required=True)
     subs.add_parser("doctor", help="Check configuration without exposing secrets.")
     cost = subs.add_parser("cost", help="Claude spend for a month against the monthly budget.")
     cost.add_argument("--month", default=datetime.now(UTC).strftime("%Y-%m"), help="YYYY-MM, UTC")
@@ -185,14 +87,24 @@ def main(argv=None):
             result = events_db.cost_summary(args.month)
             result["budget_usd"] = MONTHLY_BUDGET_USD
             result["budget_used_pct"] = round(100 * result["claude_cost_usd"] / MONTHLY_BUDGET_USD, 1)
+        elif args.command == "digest":
+            OUTPUT.mkdir(exist_ok=True)
+            path = OUTPUT / f"digest-{args.start}-to-{args.end}.html"
+            path.write_text(render_digest_html(events_db.digest(args.start, args.end), args.start, args.end),
+                            encoding="utf-8")
+            result = {"saved": str(path)}
         elif args.command == "list":
-            result = events_db.list_events()
+            result = events_db.saved_events()
         elif args.command == "doctor":
             keys = ("ANTHROPIC_API_KEY", "TAVILY_API_KEY", "TYPESAFE_API_KEY")
             result = {"keys_configured": {k: bool(os.getenv(k)) for k in keys}, "timezone": TIMEZONE.key,
                       "database": str(events_db.DB_PATH), "gdelt": events_db.candidates(today, 1), "gpr": events_db.gpr_context(today)}
         else:
-            run_brief(args)
+            request = brief_run.Request(
+                as_of=args.date, max_searches=args.max_searches, jev=args.jev,
+                **({"question": args.question, "limit": args.limit} if args.command == "brief"
+                   else {"event_id": args.event_id}))
+            run_and_report(request, live_adapters())
             return
         print(json.dumps(result, indent=2, default=str))
     except (ValueError, FileNotFoundError) as exc:

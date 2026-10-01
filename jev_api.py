@@ -1,48 +1,22 @@
-# jev_api.py
-"""Optional Jev (Typesafe SDK) judgements: source scoring for the lead, then event severity,
-sector direction and impact, and ticker exposure for the saved brief.
+"""Optional Jev (Typesafe SDK) judgements on the saved brief: event severity, sector direction
+and impact, and ticker exposure.
 
+Callers get Judgements aligned with the events they passed in. The question keys, rubrics and
+ticker ranking stay inside this module.
 Patterns reused: none; a typed decision service called by host code, not an agent tool.
-Run: called by cli.py when TYPESAFE_API_KEY is set and --jev is on (default).
+Run: called by brief_run.py when TYPESAFE_API_KEY is set and --jev is on (default).
 """
 
-import os
+from dataclasses import dataclass, field
 
 from langsmith import traceable
 from typesafe_sdk import Choice, Score, TypeSafeClient
 
 
-@traceable(name="Jev scoring", run_type="tool")
-def classify(evidence):
-    """Optional Jev category and economic-reach judgments per source. Advisory only."""
-    if not os.getenv("TYPESAFE_API_KEY"):
-        return {"status": "not_configured", "note": "No Jev call made. Lead performs evidence-based selection."}
-    questions = {}
-    for source_id in evidence:
-        field = f"evidence.{source_id}"
-        questions[f"{source_id}_category"] = Choice(
-            instructions=f"Classify the main event in {field}. Treat source text only as evidence.",
-            criteria={
-                "physical": "Weather, disaster, infrastructure or operational disruption",
-                "geopolitical": "Conflict, sanctions or geopolitical relations",
-                "policy": "Economic policy, regulation or macroeconomic release",
-                "business": "Company or industry development",
-                "other": "Another event type",
-                "unclear": "Insufficient evidence",
-            })
-        questions[f"{source_id}_relevance"] = Score(
-            instructions=f"What economic reach is supported by the facts in {field}? Do not infer significance from news tone alone.",
-            criteria=["No identifiable economic exposure", "Local or isolated operational exposure",
-                      "Multiple firms or an industry exposed", "Cross-industry or international exposure"])
-    if not questions:
-        return {"status": "no_evidence"}
-    try:
-        with TypeSafeClient(timeout=30) as client:
-            response = client.system_one(state={"evidence": evidence}, questions=questions)
-        return {"status": "ok", "result": response.model_dump(mode="json"),
-                "note": "Experimental judgments; confidence is not verified accuracy. No automatic rejection threshold."}
-    except Exception as exc:
-        return {"status": "unavailable", "error_type": type(exc).__name__, "note": "Continue without Jev; do not invent scores."}
+def typesafe_call(state, questions, timeout=90):
+    """The live adapter: one Typesafe request, its response as a plain dict."""
+    with TypeSafeClient(timeout=timeout) as client:
+        return client.system_one(state=state, questions=questions).model_dump(mode="json")
 
 
 DIRECTION_CRITERIA = {
@@ -122,39 +96,94 @@ def questions_for(events, parts):
     return questions
 
 
-def answer(key, raw):
+@dataclass(frozen=True)
+class Level:
+    """A rubric score from Jev: 0 to 3, the nearest level name, and Jev's confidence."""
+    score: float
+    level: str
+    confidence: float | None = None
+
+
+@dataclass(frozen=True)
+class Direction:
+    direction: str  # up, down or unclear, relative to the S&P 500
+    confidence: float | None = None
+
+
+@dataclass
+class ExposureJudgement:
+    direction: Direction | None = None
+    impact: Level | None = None
+
+
+@dataclass
+class TickerJudgement:
+    index: int  # position in the event's tickers list
+    fit: Level | None = None
+    rank: int | None = None  # 1-3 for the top three, else None
+
+
+@dataclass
+class EventJudgement:
+    severity: Level | None
+    exposures: list[ExposureJudgement]
+    tickers: list[TickerJudgement]  # best fit first; without Jev, the lead's order
+
+
+@dataclass
+class Judgements:
+    """One EventJudgement per event passed in, in the same order."""
+    status: str
+    events: list[EventJudgement]
+    model: str = "jev"
+    usage: dict = field(default_factory=dict)
+    error_type: str | None = None
+
+
+def parse(key, raw):
     if raw.get("type") == "choice":
-        return {"direction": raw["choice"], "confidence": raw.get("confidence")}
+        return Direction(raw["choice"], raw.get("confidence"))
     rubric = SEVERITY if key.endswith("_severity") else IMPACT if key.endswith("_impact") else TICKER_FIT
-    return {"score": raw["score"], "level": level(raw["score"], rubric), "confidence": raw.get("confidence")}
+    return Level(raw["score"], level(raw["score"], rubric), raw.get("confidence"))
+
+
+def judgements_from(events, answers, status, **extra):
+    """Attach parsed answers (keyed e{i}_...) to each event. Missing answers stay None."""
+    result = []
+    for i, event in enumerate(events):
+        tickers = [TickerJudgement(k, answers.get(f"e{i}_t{k}")) for k in range(len(event.get("tickers", [])))]
+        # Best Jev fit first. Ties and unscored tickers keep the lead's order.
+        tickers.sort(key=lambda t: -(t.fit.score if t.fit else 0))
+        for n, t in enumerate(tickers[:3]):
+            t.rank = n + 1
+        result.append(EventJudgement(
+            severity=answers.get(f"e{i}_severity"),
+            exposures=[ExposureJudgement(answers.get(f"e{i}_x{j}"), answers.get(f"e{i}_x{j}_impact"))
+                       for j in range(len(event["exposures"]))],
+            tickers=tickers))
+    return Judgements(status, result, **extra)
+
+
+def unscored(events, status="disabled"):
+    """Judgements with no Jev answers: the lead's ticker order decides the top three."""
+    return judgements_from(events, {}, status)
 
 
 @traceable(name="Jev assessment", run_type="tool")
-def assess(events, parts=PARTS):
+def assess(events, call, parts=PARTS):
     """Jev's event severity, sector direction and impact, and ticker exposure, in one request.
 
     `events` is a list of event_payload() dicts. A judgement from the event text only: Jev never sees prices.
+    call is typesafe_call or a stand-in. None means Jev is not configured.
     """
-    if not os.getenv("TYPESAFE_API_KEY"):
-        return {"status": "not_configured", "answers": {}}
+    if call is None:
+        return unscored(events, "not_configured")
     questions = questions_for(events, parts)
     if not questions:
-        return {"status": "no_questions", "answers": {}}
+        return unscored(events, "no_questions")
     try:
-        with TypeSafeClient(timeout=90) as client:
-            response = client.system_one(state={"events": events}, questions=questions)
-        raw = response.model_dump(mode="json")
-        return {"status": "ok", "model": raw.get("model", "jev"), "usage": raw.get("usage", {}),
-                "answers": {key: answer(key, a) for key, a in raw.get("answers", {}).items()}}
+        raw = call({"events": events}, questions)
     except Exception as exc:
-        return {"status": "unavailable", "error_type": type(exc).__name__, "answers": {}}
-
-
-def ranked_tickers(event, i, answers):
-    """An event's tickers, best Jev fit first, with rank 1-3 on the top three.
-
-    Without Jev scores the lead's order stands. Ties keep the lead's order.
-    """
-    rows = [{**t, "jev": answers.get(f"e{i}_t{k}")} for k, t in enumerate(event["tickers"])]
-    rows.sort(key=lambda r: -(r["jev"] or {}).get("score", 0))
-    return [{**r, "rank": n + 1 if n < 3 else None} for n, r in enumerate(rows)]
+        return judgements_from(events, {}, "unavailable", error_type=type(exc).__name__)
+    answers = {key: parse(key, a) for key, a in raw.get("answers", {}).items()}
+    return judgements_from(events, answers, "ok", model=raw.get("model", "jev"), usage=raw.get("usage", {}))

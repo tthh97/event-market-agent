@@ -34,14 +34,16 @@ followup: saved event ID
 
 | File | Job |
 |---|---|
-| `cli.py` | Command line, saving, reports |
+| `cli.py` | Command line, live adapter wiring |
+| `brief_run.py` | One brief or follow-up, outside services as adapters |
+| `point_in_time.py` | "Known by the requested day" rule |
 | `lead_agent.py` | Lead agent and prompt |
 | `researcher_subagent.py` | Researcher subagent and prompt |
-| `research_tools.py` | Tavily search, `read_sources`, `read_sql` |
+| `research_tools.py` | Research session, `research_news`, `read_sources`, `read_sql` |
 | `brief_schema.py` | Brief / Event / Exposure output model |
-| `brief_checks.py` | Code checks before saving |
-| `brief_report.py` | Markdown report |
-| `jev_api.py` | Optional Jev scoring |
+| `brief_checks.py` | Code checks and event tracking before saving |
+| `brief_report.py` | HTML brief and digest from saved assessments |
+| `jev_api.py` | Optional Jev scoring, judgements per event |
 | `events_db.py` + `schema.sql` | The database |
 | `market_returns.py` | ETF vs SPY windows |
 | `models.py` | Models and settings |

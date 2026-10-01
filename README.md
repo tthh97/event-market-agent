@@ -46,7 +46,7 @@ uv run cli.py followup SAVED_EVENT_ID
 uv run cli.py brief "What happened today?" --max-searches 4 --no-jev
 ```
 
-Reports are Markdown, HTML and JSON in `output/`. The HTML page opens with a "Keep an eye on" list ordered by Jev severity, highest first. Each card shows severity (0-3 with a bar), each linked sector's Jev impact and direction vs SPY, and the top three tickers by Jev exposure. These are Jev judgements from the news text, not measured price impact. Without Jev the lead's order stands. Everything else is stored in one SQLite database, `data/events.db` (see Database). `output/` is ignored by Git. `data/events.db` is tracked so the database ships with the project. Host code saves validated output. The agent can read the database but never write to it. Copy the project without `.venv/` to move it and run `uv sync` again.
+Reports are HTML and JSON in `output/`. The HTML page opens with a "Keep an eye on" list ordered by Jev severity, highest first. Each card shows severity (0-3 with a bar), each linked sector's Jev impact and direction vs SPY, and the top three tickers by Jev exposure. These are Jev judgements from the news text, not measured price impact. Without Jev the lead's order stands. Everything else is stored in one SQLite database, `data/events.db` (see Database). `output/` is ignored by Git. `data/events.db` is tracked so the database ships with the project. Host code saves validated output. The agent can read the database but never write to it. Copy the project without `.venv/` to move it and run `uv sync` again.
 
 ## Architecture
 
@@ -54,14 +54,13 @@ Reports are Markdown, HTML and JSON in `output/`. The HTML page opens with a "Ke
 Question + requested date
   -> short Tavily topic searches (economy, policy, conflict, business, disasters)
   -> GDELT refresh for the date (download if published) + candidate lookup
-  -> optional Jev category and economic-reach questions
   -> lead deep agent
        -> event-researcher subagent for missing evidence and exposure links
   -> Pydantic output + citation-ID/date/ticker validation
   -> drop tickers with no recent Yahoo Finance price
   -> Jev severity, sector impact and direction, ticker exposure (top three ranked)
   -> host saves run, events, sources, exposures and tickers to data/events.db
-     and renders Markdown, JSON and HTML (watch list ordered by severity)
+     and renders JSON and HTML from the saved rows (watch list ordered by severity)
 
 Saved event + follow-up date
   -> retrieve prior evidence and original event date
@@ -72,9 +71,7 @@ Saved event + follow-up date
 
 The lead merges same-story reporting within a brief. GDELT grouping by URL only reduces repeated rows; it is not semantic event identification. The packet lists saved events. When the lead judges a story to be one of them, it sets `tracked_event_id` and the brief appends a new assessment to that event instead of creating a duplicate. Code checks that the ID exists, that no two events in a brief share it, and that a known onset date is unchanged (an unknown one may be filled once). The match itself is model judgement. `followup EVENT_ID` is the guaranteed link.
 
-Jev receives retrieved excerpts and returns category and rubric-based economic reach per source. Those decisions are advisory to the lead. It is not an independent fact checker, causal model, or calibrated importance guarantee. Its usage metadata is saved when available. The implementation uses the installed official SDK, with independent questions batched in one request.
-
-After the code checks, one Jev request judges every event from its text only, never prices: severity (minor, moderate, high, severe), each exposure's impact on its sector (negligible, small, material, large) and direction vs SPY, and how directly each ticker is exposed (none, indirect, direct, core). Scores are Jev's expected level on a 0-3 scale.
+Jev is not shown the sources before the lead decides. After the code checks, one Jev request judges every event from its text only, never prices: severity (minor, moderate, high, severe), each exposure's impact on its sector (negligible, small, material, large) and direction vs SPY, and how directly each ticker is exposed (none, indirect, direct, core). Scores are Jev's expected level on a 0-3 scale.
 
 Tickers: the lead names three to five US-listed stocks or ETFs per event, each with a reason and citations. Code rejects S&P 500 trackers (SPY, VOO, IVV, SPLG) and duplicates, and drops symbols with no Yahoo Finance close in the last ten days. Jev ranks the rest; the top three get Rank 1-3.
 
@@ -168,7 +165,7 @@ Reported windows end at D0, D+1, and D+5 when available. D0 through D+5 includes
 
 - Default eight Tavily searches per run: up to five topic searches first, limited to major outlets (`MAJOR_OUTLETS` in `models.py`), the rest for the researcher on the open web. Every source carries a `major_outlet` flag. Configurable from one to ten. A window ending today uses Tavily `time_range` (newest articles). Past dates use a date range. The publication-date filter applies either way.
 - Lead limited to ten model calls; each researcher invocation limited to five, with bounded token outputs and recursion.
-- At most one initial Jev request per run; additional research is not automatically reclassified.
+- One Jev request per run, after the code checks. It judges events, not individual sources.
 - Every run saves its usage in `RunUsage`: tokens and cost per Claude model, Jev tokens, Tavily searches. `uv run cli.py cost` shows the month against the US$10 budget. A live brief on 30 Sep cost US$0.14 in Claude tokens (35k in, 5k out), which matches LangSmith. Tavily and Jev are counted but not priced.
 - Optional LangSmith tracing: each brief is one trace, "Event brief", with the Tavily searches, Jev scoring, the agent and the code checks as steps. No LangSmith evaluation scorecard exists yet.
 - No scheduler, notifications, autonomous follow-ups, five-year catalog, or buy/sell signals.
@@ -183,7 +180,7 @@ As of 1 October 2026 (Singapore time).
 | Check | Result |
 |---|---|
 | Ruff | Passed |
-| Tests | 24 passed: GDELT download, top-URL pruning and skip of known files; Jev severity, impact, direction and ticker questions saved; top-three ranking and benchmark/duplicate ticker rejection; unlisted tickers dropped; HTML and Markdown ordered by severity; cost maths incl. cache, Jev directions saved per exposure, scorecard hit rules, the first sweep reads major outlets and flags every source, HTML report puts the watch list first and escapes text, today uses time_range and past dates use a date range, repeat stories attach to saved events, date filtering, duplicate imports, citations, follow-ups keep the event ID and date, MarketWindow rows, read-only `read_sql`, weekend returns, GPR vintage exclusion |
+| Tests | 26 passed: GDELT download, top-URL pruning and skip of known files; Jev severity, impact, direction and ticker questions saved; top-three ranking and benchmark/duplicate ticker rejection; unlisted tickers dropped; HTML ordered by severity; cost maths incl. cache, Jev directions saved per exposure, scorecard hit rules, the first sweep reads major outlets and flags every source, HTML report puts the watch list first and escapes text, today uses time_range and past dates use a date range, repeat stories attach to saved events, date filtering, duplicate imports, citations, follow-ups keep the event ID and date, MarketWindow rows, read-only `read_sql`, weekend returns, GPR vintage exclusion |
 | Import supplied GDELT file | Passed, 113,066 records |
 | Live `refresh-gdelt` (1 Oct) | 27 Sep: 61,485 rows, 3,245 kept. 28 Sep: 97,242 rows, 4,048 kept. 29 Sep: skipped, already imported. 30 Sep: not published yet. `events.db` 30MB before pruning, 4.3MB after three days |
 | Live brief, 26 Sep, on a scratch copy of the database | The brief downloaded and imported the 26 Sep file itself (69,342 rows), then saved 2 events. US$0.09 |
@@ -213,15 +210,17 @@ Smoke-test JSON files in `output/` are integration evidence, not completed AI-ge
 
 | File | Job |
 |---|---|
-| `cli.py` | Command line: import, brief, followup, list, doctor. Saves and writes reports |
-| `lead_agent.py` | Lead agent, its prompt and the database guide |
+| `cli.py` | Command line: import, brief, followup, list, digest, doctor, cost. Wires the live adapters |
+| `brief_run.py` | One brief or follow-up from request to saved rows. Outside services come in as adapters |
+| `point_in_time.py` | The "known by the requested day" rule for sources, GPR and market sessions |
+| `lead_agent.py` | Lead agent, its prompt and the database guide. Built per run |
 | `researcher_subagent.py` | The event-researcher subagent and its prompt |
-| `research_tools.py` | Agent tools: Tavily news search with a per-run budget, `read_sources`, `read_sql` |
+| `research_tools.py` | Per-run research session (search budget, sources) and the agent tools |
 | `brief_schema.py` | Structured output: Brief, Event, Exposure |
-| `brief_checks.py` | Code checks on a Brief before saving |
-| `brief_report.py` | Markdown report |
-| `jev_api.py` | Optional Jev (Typesafe) scoring |
-| `events_db.py` | All reads and writes of `data/events.db` |
+| `brief_checks.py` | Code checks on a Brief before saving, including which saved event it continues |
+| `brief_report.py` | HTML brief and digest pages, rendered from saved assessments |
+| `jev_api.py` | Optional Jev (Typesafe) scoring, returned as judgements per event |
+| `events_db.py` | All reads and writes of `data/events.db`, including the assessment view reports use |
 | `schema.sql` | Database tables, commented |
 | `market_returns.py` | Sector ETF vs SPY return windows |
 | `models.py` | Models, `.env`, timezone, sector-to-ETF map |

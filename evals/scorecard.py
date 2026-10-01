@@ -34,54 +34,35 @@ TICKER_SECTOR = {v: k for k, v in SECTORS.items()}
 WINDOWS = {"D0_to_D1": "D+1", "D0_to_D5": "D+5"}
 
 
-def first_assessments(con):
-    """Each event's first assessment: the prediction made when the story first appeared."""
-    return con.execute("""
-        SELECT e.EventId, e.EventDate, e.FirstAssessedOn, a.AssessmentId, a.Title, a.Summary
-        FROM Event e JOIN Assessment a ON a.AssessmentId = (
-            SELECT a2.AssessmentId FROM Assessment a2 JOIN Run r2 USING (RunId)
-            WHERE a2.EventId = e.EventId ORDER BY r2.CreatedAt, a2.AssessmentId LIMIT 1)
-        ORDER BY e.FirstAssessedOn, e.EventId""").fetchall()
-
-
-def exposures_of(con, assessment_id):
-    return con.execute("""
-        SELECT x.ExposureId, x.SectorId, x.Channel, x.Reasoning, x.Status, d.Direction, d.Confidence
-        FROM Exposure x LEFT JOIN ExposureDirection d USING (ExposureId)
-        WHERE x.AssessmentId = ? ORDER BY x.ExposureId""", [assessment_id]).fetchall()
+def first_assessments(db):
+    """Each event's first assessment view (the prediction made when the story first appeared)."""
+    with events_db.connect(db) as con:
+        rows = con.execute("""
+            SELECT e.FirstAssessedOn, (
+                SELECT a.AssessmentId FROM Assessment a JOIN Run r USING (RunId)
+                WHERE a.EventId = e.EventId ORDER BY r.CreatedAt, a.AssessmentId LIMIT 1) AS AssessmentId
+            FROM Event e ORDER BY e.FirstAssessedOn, e.EventId""").fetchall()
+        return [{**events_db.assessment_view(con, r["AssessmentId"]), "first_assessed": r["FirstAssessedOn"]}
+                for r in rows]
 
 
 def fill_directions(db, batch=8):
     """Ask Jev for missing directions on first assessments. Jev sees event text only, never prices."""
-    con = sqlite3.connect(db)
-    con.row_factory = sqlite3.Row
-    todo = []
-    for a in first_assessments(con):
-        xs = exposures_of(con, a["AssessmentId"])
-        if not xs or all(x["Direction"] for x in xs):
-            continue
-        cited = [r[0] for r in con.execute("""
-            SELECT SourceId FROM AssessmentSource WHERE AssessmentId = ?
-            UNION SELECT es.SourceId FROM ExposureSource es JOIN Exposure x USING (ExposureId)
-            WHERE x.AssessmentId = ?""", [a["AssessmentId"], a["AssessmentId"]])]
-        excerpts = {r["SourceId"]: {"excerpt": r["Excerpt"]} for r in con.execute(
-            f"SELECT SourceId, Excerpt FROM Source WHERE SourceId IN ({','.join('?' * len(cited))})", cited)}
-        event = {"title": a["Title"], "summary": a["Summary"], "source_ids": cited,
-                 "exposures": [{"sector": x["SectorId"], "channel": x["Channel"], "reasoning": x["Reasoning"],
-                                "source_ids": []} for x in xs]}
-        todo.append((jev_api.event_payload(event, excerpts), [x["ExposureId"] for x in xs]))
-    con.close()
+    todo = [a for a in first_assessments(db) if a["exposures"] and not all(x["direction"] for x in a["exposures"])]
+    with events_db.connect(db) as con:
+        excerpts = {r["SourceId"]: {"excerpt": r["Excerpt"]} for r in con.execute("SELECT SourceId, Excerpt FROM Source")}
     saved = 0
     for start in range(0, len(todo), batch):
         chunk = todo[start:start + batch]
-        result = jev_api.assess([payload for payload, _ in chunk], parts=("direction",))
-        if result["status"] != "ok":
-            raise RuntimeError(f"Jev directions failed: {result}")
+        result = jev_api.assess([jev_api.event_payload(a, excerpts) for a in chunk], jev_api.typesafe_call,
+                                parts=("direction",))
+        if result.status != "ok":
+            raise RuntimeError(f"Jev directions failed: {result.status} {result.error_type or ''}")
         with events_db.connect(db) as con:
-            for i, (_, exposure_ids) in enumerate(chunk):
-                for j, exposure_id in enumerate(exposure_ids):
-                    if f"e{i}_x{j}" in result["answers"]:
-                        events_db.save_direction(con, exposure_id, result["answers"][f"e{i}_x{j}"], result["model"])
+            for a, judged in zip(chunk, result.events, strict=True):
+                for exposure, verdict in zip(a["exposures"], judged.exposures, strict=True):
+                    if verdict.direction:
+                        events_db.save_direction(con, exposure["exposure_id"], verdict.direction, result.model)
                         saved += 1
     return saved
 
@@ -103,10 +84,8 @@ def direction_hit(direction, excess):
 
 
 def score(db, cutoff):
-    con = sqlite3.connect(db)
-    con.row_factory = sqlite3.Row
-    firsts = first_assessments(con)
-    window_start = min(date.fromisoformat(a["FirstAssessedOn"]) for a in firsts)
+    firsts = first_assessments(db)
+    window_start = min(date.fromisoformat(a["first_assessed"]) for a in firsts)
     frame = yf.download(sorted(SECTORS.values()) + ["SPY"], start=str(window_start - timedelta(days=14)),
                         end=str(cutoff + timedelta(days=1)), auto_adjust=True, progress=False, threads=False)
     close = frame["Close"]
@@ -115,23 +94,24 @@ def score(db, cutoff):
     magnitude = {w: [] for w in WINDOWS}
     unclear = scored_exposures = 0
     for a in firsts:
-        start = measure_from(a["EventDate"], a["FirstAssessedOn"], window_start)
+        start = measure_from(a["event_date"], a["first_assessed"], window_start)
         by = defaultdict(dict)
         for r in calculate_windows(close, start, cutoff):
             by[r["window"]][TICKER_SECTOR[r["ticker"]]] = r["excess_percentage_points"]
-        xs = exposures_of(con, a["AssessmentId"])
-        linked = {x["SectorId"] for x in xs}
+        xs = [{"sector": x["sector"], **(x["direction"] or {"direction": None, "confidence": None})}
+              for x in a["exposures"]]
+        linked = {x["sector"] for x in xs}
         for x in xs:
             scored_exposures += 1
-            unclear += x["Direction"] == "unclear"
+            unclear += x["direction"] == "unclear"
         for w in WINDOWS:
             if not by[w]:
                 continue
             for x in xs:
-                hit = direction_hit(x["Direction"], by[w].get(x["SectorId"]))
+                hit = direction_hit(x["direction"], by[w].get(x["sector"]))
                 if hit is not None:
-                    calls[w].append({"event_id": a["EventId"], "sector": x["SectorId"], "direction": x["Direction"],
-                                     "confidence": x["Confidence"], "excess_pp": by[w][x["SectorId"]], "hit": hit})
+                    calls[w].append({"event_id": a["event_id"], "sector": x["sector"], "direction": x["direction"],
+                                     "confidence": x["confidence"], "excess_pp": by[w][x["sector"]], "hit": hit})
             ours = [abs(v) for s, v in by[w].items() if s in linked]
             rest = [abs(v) for s, v in by[w].items() if s not in linked]
             if ours and rest:
@@ -156,7 +136,6 @@ def score(db, cutoff):
                                     "others_pp": round(mean(b for _, b in p), 3),
                                     "linked_bigger": sum(a > b for a, b in p)}
                        for w, p in magnitude.items() if p}
-    con.close()
     return {"directions": directions, "linked_vs_other": linked_vs_other,
             "exposures": scored_exposures, "unclear_calls": unclear, "calls_detail": calls}
 
