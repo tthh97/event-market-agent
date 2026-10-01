@@ -167,8 +167,8 @@ def prune_gdelt(con, keep=None):
                 WHERE n <= ?) top USING (EventDate, SourceUrl))""", [keep or GDELT_KEEP_URLS])
 
 
-def candidates(as_of, limit=12, db=None):
-    """GDELT leads for one event date, known by that day. Rows sharing a URL are collapsed."""
+def candidates(as_of, limit=12, db=None, since=None):
+    """GDELT leads for event dates since..as_of (default as_of only), known by as_of. Rows sharing a URL are collapsed."""
     if not 1 <= limit <= 30:
         raise ValueError("limit must be 1 to 30")
     with connect(db) as con:
@@ -177,12 +177,13 @@ def candidates(as_of, limit=12, db=None):
                    Actor1Name AS actor1, Actor2Name AS actor2, Place AS place,
                    group_concat(DISTINCT EventCode) AS cameo_codes, count(*) AS raw_rows
             FROM GdeltEvent
-            WHERE EventDate = ? AND AddedDate <= ? AND SourceUrl LIKE 'http%'
+            WHERE EventDate BETWEEN ? AND ? AND AddedDate <= ? AND SourceUrl LIKE 'http%'
             GROUP BY SourceUrl
             ORDER BY mentions DESC, url
-            LIMIT ?""", [str(as_of), str(as_of), limit]).fetchall()
+            LIMIT ?""", [str(since or as_of), str(as_of), str(as_of), limit]).fetchall()
         latest = con.execute("SELECT max(AddedDate) FROM GdeltEvent").fetchone()[0]
-    return {"requested_event_date": str(as_of), "latest_imported_date": latest,
+    period = {"requested_start_date": str(since)} if since and since != as_of else {}
+    return {**period, "requested_event_date": str(as_of), "latest_imported_date": latest,
             "candidates": [dict(r) for r in rows],
             "warning": "Coverage-ranked research leads, not verified events or a complete daily news feed. "
                        "URL grouping is not semantic event deduplication."}

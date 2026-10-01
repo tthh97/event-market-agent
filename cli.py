@@ -41,7 +41,8 @@ def run_and_report(request, adapters):
     report = save_reports(result, OUTPUT, adapters.db)
     print(f"Saved {report} and {report.with_suffix('.json').name}")
     cost = sum(u["cost_usd"] or 0 for u in result.usage)
-    print(json.dumps({"event_ids": result.event_ids, "search_calls": result.search_calls,
+    print(json.dumps({"period": f"{result.start} to {result.as_of}", "event_ids": result.event_ids,
+                      "search_calls": result.search_calls,
                       "jev": result.judgements.status,
                       "unlisted_tickers": result.unlisted, "claude_cost_usd": round(cost, 4)}, indent=2))
 
@@ -73,6 +74,8 @@ def main(argv=None):
         cmd.add_argument("--jev", action=argparse.BooleanOptionalAction, default=True)
         if command == "brief":
             cmd.add_argument("--limit", type=int, choices=range(1, 6), default=5)
+            cmd.add_argument("--period", choices=("day", "week"),
+                             help="Day, or the week ending on --date. Default: week if the question asks about the week")
     args = parser.parse_args(argv)
     try:
         if args.command == "import-gdelt":
@@ -100,7 +103,9 @@ def main(argv=None):
         else:
             request = brief_run.Request(
                 as_of=args.date, max_searches=args.max_searches, jev=args.jev,
-                **({"question": args.question, "limit": args.limit} if args.command == "brief"
+                **({"question": args.question, "limit": args.limit,
+                    "days": {"day": 1, "week": 7}.get(args.period) or brief_run.days_asked(args.question)}
+                   if args.command == "brief"
                    else {"event_id": args.event_id}))
             run_and_report(request, live_adapters())
             return

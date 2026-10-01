@@ -112,9 +112,13 @@ def ticker_list(tickers):
     return f'<ul class="pills">{"".join(items)}</ul>' if items else '<p class="muted">None named</p>'
 
 
-def render_html(events, as_of, limitations, market=None, gpr=None):
-    """One run's assessment views as a self-contained HTML page, scored watch list first."""
+def render_html(events, as_of, limitations, market=None, gpr=None, start=None):
+    """One run's assessment views as a self-contained HTML page, scored watch list first.
+
+    start before as_of makes it a weekly brief covering start to as_of.
+    """
     e = escape
+    period = f"Weekly brief: {start} to {as_of}" if start and start != as_of else f"Event brief: {as_of}"
 
     def kind_tag(x):
         return '<span class="tag update">Update</span>' if x["update"] else '<span class="tag new">New</span>'
@@ -182,9 +186,9 @@ def render_html(events, as_of, limitations, market=None, gpr=None):
 
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Event Brief {e(str(as_of))}</title><style>{HTML_STYLE}</style></head>
+<title>{e(period.replace("brief", "Brief"))}</title><style>{HTML_STYLE}</style></head>
 <body><main>
-<h1>Event brief: {e(str(as_of))}</h1>
+<h1>{e(period)}</h1>
 <p class="muted">Day boundaries: {e(TIMEZONE.key)}. Sector exposures are assessments, not price predictions or trading signals.</p>
 <h2>Keep an eye on</h2>
 <p class="muted">Ordered by Jev severity, highest first. Scores run 0 to 3 and are Jev judgements from the news text,
@@ -201,15 +205,17 @@ def save_reports(result, output_dir, db=None):
     """Write one run's .html report and .json record next to each other. Returns the .html path."""
     events = events_db.run_view(result.run_id, db)
     output_dir.mkdir(exist_ok=True)
-    destination = output_dir / f"{result.as_of}-{result.run_id[:8]}"
+    period = f"{result.start}-to-{result.as_of}" if result.start != result.as_of else str(result.as_of)
+    destination = output_dir / f"{period}-{result.run_id[:8]}"
     artifact = {"brief": result.brief.model_dump(mode="json"), "event_ids": result.event_ids,
                 "sources": result.evidence, "jev_judgements": asdict(result.judgements),
                 "unlisted_tickers": result.unlisted, "usage": result.usage, "gpr": result.gpr,
-                "market": result.market, "search_calls": result.search_calls, "as_of": str(result.as_of),
+                "market": result.market, "search_calls": result.search_calls, "period_start": str(result.start), "as_of": str(result.as_of),
                 "timezone": TIMEZONE.key, "created_at": datetime.now(TIMEZONE).isoformat()}
     destination.with_suffix(".json").write_text(json.dumps(artifact, indent=2), encoding="utf-8")
     destination.with_suffix(".html").write_text(
-        render_html(events, result.as_of, result.brief.limitations, result.market, result.gpr), encoding="utf-8")
+        render_html(events, result.as_of, result.brief.limitations, result.market, result.gpr, result.start),
+        encoding="utf-8")
     return destination.with_suffix(".html")
 
 

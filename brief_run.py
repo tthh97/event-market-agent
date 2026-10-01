@@ -8,9 +8,10 @@ Run: brief_run.run(Request(...), adapters), called by cli.py.
 """
 
 import json
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from langchain_core.callbacks import get_usage_metadata_callback
@@ -27,6 +28,14 @@ from research_tools import TOPIC_QUERIES, ResearchSession, make_tools
 # S&P 500 trackers are the benchmark, not an exposed name.
 BENCHMARK_TICKERS = {"SPY", "VOO", "IVV", "SPLG"}
 
+# A question about the week asks for the seven days ending on the requested date.
+WEEK_QUESTION = re.compile(r"\b(weeks?|weekly|7 days|seven days)\b", re.IGNORECASE)
+
+
+def days_asked(question):
+    """Days a brief question covers: 7 when it asks about the week, else 1."""
+    return 7 if WEEK_QUESTION.search(question or "") else 1
+
 
 @dataclass
 class Adapters:
@@ -40,10 +49,14 @@ class Adapters:
 
 @dataclass
 class Request:
-    """A brief (question set) or a follow-up of a saved event (event_id set)."""
+    """A brief (question set) or a follow-up of a saved event (event_id set).
+
+    A brief covers the `days` days ending on as_of. A follow-up covers the time since its saved assessment.
+    """
     as_of: date
     question: str | None = None
     event_id: str | None = None
+    days: int = 1
     limit: int = 5
     max_searches: int = 8
     jev: bool = True
@@ -62,6 +75,7 @@ class Result:
     gpr: dict
     market: dict | None
     search_calls: int
+    start: date  # first day of a brief's period; as_of for a one-day brief or a follow-up
 
 
 @traceable(name="Event brief", run_type="chain",
@@ -75,8 +89,9 @@ def run(request, adapters):
     if prior and as_of < date.fromisoformat(prior["as_of"]):
         raise ValueError("Follow-up date precedes the saved assessment. Historical replay is not supported.")
 
+    start = as_of if prior else as_of - timedelta(days=request.days - 1)
     session = ResearchSession(as_of, request.max_searches, news=adapters.news,
-                              since=date.fromisoformat(prior["as_of"]) if prior else as_of)
+                              since=date.fromisoformat(prior["as_of"]) if prior else start)
     if prior:
         session.evidence.update(prior["evidence"])
         question = f"What changed for saved event {prior['event_id']}: {prior['event']['title']}"
@@ -87,11 +102,14 @@ def run(request, adapters):
         queries = TOPIC_QUERIES[:max(1, request.max_searches - 1)]
     # The first sweep reads major outlets only. The researcher searches the open web.
     search_results = [session.search(q, major_outlets_only=not prior) for q in queries]
-    # Fetch the day's GDELT leads if published. Missing or failed downloads leave the brief to Tavily.
-    gdelt_refresh = events_db.refresh_gdelt(as_of, db, adapters.gdelt)
+    # Fetch each day's GDELT leads if published. Missing or failed downloads leave the brief to Tavily.
+    days = [start + timedelta(days=i) for i in range((as_of - start).days + 1)]
+    refresh = {str(day): events_db.refresh_gdelt(day, db, adapters.gdelt)["status"] for day in days}
     max_events = 1 if prior else request.limit
     packet = {"question": question, "as_of": str(as_of), "timezone": TIMEZONE.key, "max_events": max_events,
-              "gdelt": {**events_db.candidates(as_of, db=db), "refresh": gdelt_refresh["status"]},
+              "period": {"start": str(start), "end": str(as_of), "days": len(days)},
+              "gdelt": {**events_db.candidates(as_of, db=db, since=start),
+                        "refresh": refresh[str(as_of)] if len(days) == 1 else refresh},
               "saved_events": events_db.saved_events(as_of, limit=20, db=db),
               "search_results": search_results, "prior_event": prior}
 
@@ -121,7 +139,7 @@ def run(request, adapters):
         "followup" if prior else "brief", question, as_of, brief, session.evidence, session.calls, judgements.status,
         judgements, market_metrics=market["metrics"] if market else (), usage=usage, db=db)
     return Result(run_id, ids, as_of, brief, session.evidence, judgements, unlisted, usage, gpr, market,
-                  session.calls)
+                  session.calls, start)
 
 
 def resolve_tracking(brief, followup_id=None, db=None):

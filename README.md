@@ -48,6 +48,10 @@ uv run cli.py refresh-gpr
 # Historical-date research: publication dates are filtered, but this is not a point-in-time backtest.
 uv run cli.py brief "What significant events developed on this date?" --date 2026-09-29 --limit 3
 
+# A week: researches the seven days ending on --date and writes one "Weekly brief" report.
+# Chosen when the question mentions the week (week, weekly, 7 days). --period day|week overrides.
+uv run cli.py brief "What were the most important events this week?" --date 2026-09-30
+
 # List saved assessments and use one ID to follow the same event.
 uv run cli.py list
 uv run cli.py cost

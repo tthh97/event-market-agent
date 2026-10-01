@@ -342,6 +342,38 @@ def test_runner_saves_validated_artifacts_with_stand_in_adapters(tmp_path):
     assert 'Offline fixture' in report.read_text() and report.with_suffix('.html').exists()
 
 
+def test_weekly_question_researches_the_whole_week_and_writes_one_weekly_report(tmp_path):
+    db = tmp_path/'test.db'
+    news, calls = fake_news([
+        {'url': 'https://example.com/early', 'title': 'Early', 'content': 'x', 'published_date': '2026-09-24T10:00:00Z'},
+        {'url': 'https://example.com/late', 'title': 'Late', 'content': 'x', 'published_date': '2026-09-29T10:00:00Z'}])
+    packets, gdelt_days = [], []
+
+    def agent(tools):
+        def invoke(message, config):
+            packet = json.loads(message['messages'][0]['content'])
+            packets.append(packet)
+            return {'structured_response': Brief(events=[citing(packet['search_results'][0]['sources'][0]['source_id'])],
+                                                 limitations=[])}
+        return SimpleNamespace(invoke=invoke)
+
+    question = 'What were the biggest events this week?'
+    assert brief_run.days_asked(question) == 7
+    assert brief_run.days_asked('What events happened today?') == 1
+    prices = fake_prices(pd.DataFrame({'CAT': [1.0]}, index=pd.to_datetime(['2026-09-29'])))
+    adapters = brief_run.Adapters(news=news, agent=agent, prices=prices, jev=None,
+                                  gdelt=lambda day: gdelt_days.append(day), db=db)
+    result = brief_run.run(brief_run.Request(as_of=date(2026,9,30), question=question, days=7, jev=False), adapters)
+    assert calls[0]['start_date'] == '2026-09-23'
+    assert [s['title'] for s in packets[0]['search_results'][0]['sources']] == ['Early', 'Late']
+    assert packets[0]['period'] == {'start': '2026-09-24', 'end': '2026-09-30', 'days': 7}
+    assert gdelt_days == [date(2026,9,24) + timedelta(days=i) for i in range(7)]
+    report = save_reports(result, tmp_path/'output', db)
+    assert report.name.startswith('2026-09-24-to-2026-09-30-')
+    assert 'Weekly brief: 2026-09-24 to 2026-09-30' in report.read_text()
+    assert json.loads(report.with_suffix('.json').read_text())['period_start'] == '2026-09-24'
+
+
 def test_followup_run_reuses_the_event_and_measures_sector_windows(tmp_path):
     db = tmp_path/'test.db'
     _, [event_id] = save(Brief(events=[event()], limitations=[]), date(2026,9,29), db)
