@@ -127,7 +127,7 @@ def make_tools(session, db=None):
         """Run one read-only SELECT against data/events.db and return up to 50 rows.
 
         Use it to see earlier assessments of a story (Event, Assessment, Exposure), extra GDELT
-        leads (GdeltEvent) or GPR history (GprDaily). Tables are PascalCase and singular.
+        leads (GdeltEvent). Tables are PascalCase and singular.
         """
         if not query.lstrip().lower().startswith(("select", "with")):
             return "Error: only SELECT queries are allowed."

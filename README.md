@@ -42,9 +42,6 @@ uv run cli.py import-gdelt /path/to/20260929.export.CSV
 # Inspect raw leads without any model or search calls.
 uv run cli.py candidates --date 2026-09-29 --limit 12
 
-# Download the official GPR daily series and record retrieval time.
-uv run cli.py refresh-gpr
-
 # Historical-date research: publication dates are filtered, but this is not a point-in-time backtest.
 uv run cli.py brief "What significant events developed on this date?" --date 2026-09-29 --limit 3
 
@@ -99,9 +96,8 @@ Potential sector exposure is a sourced narrative hypothesis. There is no univers
 | Table | One row per |
 |---|---|
 | `Sector` | US sector and its SPDR ETF (11 rows) |
-| `DataImport` | Imported GDELT file or GPR download |
+| `DataImport` | Imported GDELT file |
 | `GdeltEvent` | GDELT export row (unverified research lead) |
-| `GprDaily` | Daily GPR index value |
 | `Run` | Brief or follow-up |
 | `Source` | Dated news article retrieved by Tavily (`RunSource` links it to runs) |
 | `Event` | Tracked development, with its original onset date |
@@ -160,16 +156,6 @@ Only the 300 most-mentioned URLs per event date are kept, with all their rows. A
 
 [GDELT daily-export codebook](https://data.gdeltproject.org/documentation/GDELT-Data_Format_Codebook.pdf)
 
-## GPR context
-
-The integration downloads the original official daily GPR series, not the separate AI-GPR product. GPR is newspaper-based aggregate geopolitical risk context. It does not score individual events or apply to every event category. The brief displays observation and retrieval dates; it makes no automatic trading inference.
-
-The verified snapshot's latest observation was **September 28, 2026**. GPR daily data are released on a periodic schedule, and recent values may be revised. A snapshot retrieved after a requested historical day is excluded from that historical brief. This does not implement a vintage archive or historical point-in-time GPR backtest.
-
-Attribution: Dario Caldara and Matteo Iacoviello, *Measuring Geopolitical Risk* (2022). Data downloaded October 1, 2026, Singapore time. The source page states CC BY licensing.
-
-[Official GPR methodology and downloads](https://www.matteoiacoviello.com/gpr.htm)
-
 ## Market follow-ups
 
 Python fetches adjusted daily ETF closes and SPY. Since event time is only recorded at date precision, the first strictly later US trading session is used, with the preceding available close as baseline. The current New York calendar date is always excluded to avoid incomplete daily prices.
@@ -186,7 +172,7 @@ Reported windows end at D0, D+1, and D+5 when available. D0 through D+5 includes
 - No scheduler, notifications, autonomous follow-ups, five-year catalog, or buy/sell signals.
 - Source/date validation catches invented IDs and future sources; semantic claim support still depends on model quality and review.
 - Historical web results may have been edited after their publication date. This is exploratory historical research, not hindsight-free evaluation.
-- Runtime or credential failures stop the run without claiming a successful brief. GPR and market outages are separately visible.
+- Runtime or credential failures stop the run without claiming a successful brief. Market data outages are separately visible.
 
 ## Verification performed
 
@@ -195,11 +181,10 @@ As of 1 October 2026 (Singapore time).
 | Check | Result |
 |---|---|
 | Ruff | Passed |
-| Tests | 26 passed: GDELT download, top-URL pruning and skip of known files; Jev severity, impact, direction and ticker questions saved; top-three ranking and benchmark/duplicate ticker rejection; unlisted tickers dropped; HTML ordered by severity; cost maths incl. cache, Jev directions saved per exposure, scorecard hit rules, the first sweep reads major outlets and flags every source, HTML report puts the watch list first and escapes text, today uses time_range and past dates use a date range, repeat stories attach to saved events, date filtering, duplicate imports, citations, follow-ups keep the event ID and date, MarketWindow rows, read-only `read_sql`, weekend returns, GPR vintage exclusion |
+| Tests | 26 passed: GDELT download, top-URL pruning and skip of known files; Jev severity, impact, direction and ticker questions saved; top-three ranking and benchmark/duplicate ticker rejection; unlisted tickers dropped; HTML ordered by severity; cost maths incl. cache, Jev directions saved per exposure, scorecard hit rules, the first sweep reads major outlets and flags every source, HTML report puts the watch list first and escapes text, today uses time_range and past dates use a date range, repeat stories attach to saved events, date filtering, duplicate imports, citations, follow-ups keep the event ID and date, MarketWindow rows, read-only `read_sql`, weekend returns |
 | Import supplied GDELT file | Passed, 113,066 records |
 | Live `refresh-gdelt` (1 Oct) | 27 Sep: 61,485 rows, 3,245 kept. 28 Sep: 97,242 rows, 4,048 kept. 29 Sep: skipped, already imported. 30 Sep: not published yet. `events.db` 30MB before pruning, 4.3MB after three days |
 | Live brief, 26 Sep, on a scratch copy of the database | The brief downloaded and imported the 26 Sep file itself (69,342 rows), then saved 2 events. US$0.09 |
-| Official GPR download and date parsing | Passed, latest observation September 28 |
 | Live brief, 29 Sep | 3 events saved (run before the database rebuild, migrated) |
 | Live brief, 30 Sep | 2 events. The agent used `read_sql` and named the already-saved Hormuz event |
 | Live brief, 30 Sep, rerun after the duplicate fix | Hormuz and RTX attached to 648ec9e12ab5 and 060f8ec1034d. No new events created |
@@ -227,7 +212,7 @@ Smoke-test JSON files in `output/` are integration evidence, not completed AI-ge
 |---|---|
 | `cli.py` | Command line: import, brief, followup, list, digest, doctor, cost. Wires the live adapters |
 | `brief_run.py` | One brief or follow-up from request to saved rows, including the code checks before saving. Outside services come in as adapters |
-| `point_in_time.py` | The "known by the requested day" rule for sources, GPR and market sessions |
+| `point_in_time.py` | The "known by the requested day" rule for sources and market sessions |
 | `lead_agent.py` | Lead agent, the event-researcher subagent, their prompts, the database guide and the Brief output shape. Built per run |
 | `research_tools.py` | Per-run research session (search budget, sources) and the agent tools |
 | `brief_report.py` | HTML brief and digest pages, rendered from saved assessments |

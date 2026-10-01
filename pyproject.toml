@@ -12,9 +12,8 @@ dependencies = [
   "typesafe-sdk",
   "yfinance",
   "pandas",
-  "xlrd",
-  "httpx",
   "langsmith>=0.14.2",
+  "httpx",
 ]
 [dependency-groups]
 dev = ["ruff>=0.15.17", "pytest"]

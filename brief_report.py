@@ -112,7 +112,7 @@ def ticker_list(tickers):
     return f'<ul class="pills">{"".join(items)}</ul>' if items else '<p class="muted">None named</p>'
 
 
-def render_html(events, as_of, limitations, market=None, gpr=None, start=None):
+def render_html(events, as_of, limitations, market=None, start=None):
     """One run's assessment views as a self-contained HTML page, scored watch list first.
 
     start before as_of makes it a weekly brief covering start to as_of.
@@ -177,11 +177,6 @@ def render_html(events, as_of, limitations, market=None, gpr=None, start=None):
         extra += (f'<h2>Observed market reaction</h2><div class="card table-wrap"><table><thead><tr><th>ETF</th><th>Window</th>'
                   f'<th>Baseline</th><th>End</th><th>Return</th><th>SPY</th><th>Difference</th></tr></thead><tbody>{rows}</tbody></table>'
                   f'<p class="muted">{e(market.get("timing", ""))} {e(market.get("limitation", ""))}</p></div>')
-    if gpr:
-        latest = gpr.get("latest")
-        value = f"Latest eligible GPRD: {latest['gprd']:.2f} on {latest['date']}. " if latest else ""
-        extra += (f'<h2>Geopolitical risk context</h2><div class="card"><p>{e(value)}{e(gpr.get("note", ""))}</p>'
-                  f'<p class="muted">Status: {e(gpr["status"])}. <a href="{events_db.GPR_SOURCE}">Official GPR source</a>, Caldara and Iacoviello.</p></div>')
     limits = "".join(f"<li>{e(x)}</li>" for x in [*limitations, *FIXED_LIMITS])
 
     return f"""<!doctype html>
@@ -209,12 +204,12 @@ def save_reports(result, output_dir, db=None):
     destination = output_dir / f"{period}-{result.run_id[:8]}"
     artifact = {"brief": result.brief.model_dump(mode="json"), "event_ids": result.event_ids,
                 "sources": result.evidence, "jev_judgements": asdict(result.judgements),
-                "unlisted_tickers": result.unlisted, "usage": result.usage, "gpr": result.gpr,
+                "unlisted_tickers": result.unlisted, "usage": result.usage,
                 "market": result.market, "search_calls": result.search_calls, "period_start": str(result.start), "as_of": str(result.as_of),
                 "timezone": TIMEZONE.key, "created_at": datetime.now(TIMEZONE).isoformat()}
     destination.with_suffix(".json").write_text(json.dumps(artifact, indent=2), encoding="utf-8")
     destination.with_suffix(".html").write_text(
-        render_html(events, result.as_of, result.brief.limitations, result.market, result.gpr, result.start),
+        render_html(events, result.as_of, result.brief.limitations, result.market, result.start),
         encoding="utf-8")
     return destination.with_suffix(".html")
 

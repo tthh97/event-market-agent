@@ -58,7 +58,6 @@ def main(argv=None):
     gdelt = subs.add_parser("refresh-gdelt", help="Download and import the GDELT daily export for a date.")
     gdelt.add_argument("--date", type=date.fromisoformat, default=datetime.now(UTC).date() - timedelta(days=1),
                        help="Event date, default yesterday UTC (published about 07:00 UTC the next day)")
-    subs.add_parser("refresh-gpr", help="Download the official daily GPR series into data/events.db.")
     subs.add_parser("list", help="List saved assessed events.")
     dig = subs.add_parser("digest", help="HTML page of the stories to be aware of over a date range.")
     dig.add_argument("--start", type=date.fromisoformat, required=True)
@@ -84,8 +83,6 @@ def main(argv=None):
             result = events_db.candidates(args.date, args.limit)
         elif args.command == "refresh-gdelt":
             result = events_db.refresh_gdelt(args.date)
-        elif args.command == "refresh-gpr":
-            result = events_db.refresh_gpr()
         elif args.command == "cost":
             result = events_db.cost_summary(args.month)
         elif args.command == "digest":
@@ -99,7 +96,7 @@ def main(argv=None):
         elif args.command == "doctor":
             keys = ("ANTHROPIC_API_KEY", "TAVILY_API_KEY", "TYPESAFE_API_KEY")
             result = {"keys_configured": {k: bool(os.getenv(k)) for k in keys}, "timezone": TIMEZONE.key,
-                      "database": str(events_db.DB_PATH), "gdelt": events_db.candidates(today(), 1), "gpr": events_db.gpr_context(today())}
+                      "database": str(events_db.DB_PATH), "gdelt": events_db.candidates(today(), 1)}
         else:
             request = brief_run.Request(
                 as_of=args.date, max_searches=args.max_searches, jev=args.jev,

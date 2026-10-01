@@ -18,18 +18,13 @@ from pathlib import Path
 from uuid import uuid4
 
 import httpx
-import pandas as pd
 
 from models import MONTHLY_BUDGET_USD, ROOT, SECTORS, is_major_outlet
-from point_in_time import known_by, parse_timestamp
 
 # EVENTS_DB points a run at another database file, e.g. a separate backfill.
 DB_PATH = ROOT / os.getenv("EVENTS_DB", "data/events.db")
 SCHEMA = (ROOT / "schema.sql").read_text(encoding="utf-8")
 
-GPR_SOURCE = "https://www.matteoiacoviello.com/gpr.htm"
-GPR_DOWNLOAD = "https://www.matteoiacoviello.com/gpr_files/data_gpr_daily_recent.xls"
-GPR_ATTRIBUTION = "Dario Caldara and Matteo Iacoviello, Measuring Geopolitical Risk (2022). CC BY."
 
 
 def now_utc():
@@ -187,53 +182,6 @@ def candidates(as_of, limit=12, db=None, since=None):
             "candidates": [dict(r) for r in rows],
             "warning": "Coverage-ranked research leads, not verified events or a complete daily news feed. "
                        "URL grouping is not semantic event deduplication."}
-
-
-# GPR -------------------------------------------------------------------------
-
-
-def refresh_gpr(db=None):
-    """Download the official daily GPR series and replace GprDaily."""
-    response = httpx.get(GPR_DOWNLOAD, follow_redirects=True, timeout=45)
-    response.raise_for_status()
-    frame = pd.read_excel(io.BytesIO(response.content))
-    frame.columns = [str(x).strip() for x in frame.columns]
-    if "date" not in frame or "GPRD" not in frame:
-        raise ValueError(f"GPR schema changed: expected date and GPRD, found {list(frame.columns)}")
-    days = pd.to_datetime(frame["date"], errors="coerce")
-    records = [(d.date().isoformat(), float(v)) for d, v in zip(days, frame["GPRD"], strict=True)
-               if pd.notna(d) and pd.notna(v)]
-    # Guards against numeric day codes parsed as 1970 timestamps.
-    if not records or any(day < "1985-01-01" for day, _ in records):
-        raise ValueError("Invalid daily GPR observation dates; refusing to save.")
-    digest = hashlib.sha256(response.content).hexdigest()
-    retrieved_at = now_utc()
-    with connect(db) as con:
-        con.execute("DELETE FROM GprDaily")
-        con.executemany("INSERT INTO GprDaily VALUES (?, ?)", records)
-        con.execute("DELETE FROM DataImport WHERE Source = 'gpr'")
-        con.execute("INSERT INTO DataImport (Source, FileName, Sha256, RowCount, ImportedAt) VALUES (?, ?, ?, ?, ?)",
-                    ["gpr", GPR_DOWNLOAD, digest, len(records), retrieved_at])
-    return {"source": GPR_SOURCE, "retrieved_at": retrieved_at, "sha256": digest,
-            "attribution": GPR_ATTRIBUTION, "latest_observation": max(day for day, _ in records)}
-
-
-def gpr_context(as_of, db=None):
-    """Latest GPR value on or before as_of, if the downloaded snapshot was available that day."""
-    with connect(db) as con:
-        retrieved_at = con.execute("SELECT max(ImportedAt) FROM DataImport WHERE Source = 'gpr'").fetchone()[0]
-        latest = con.execute("SELECT Date AS date, Gprd AS gprd FROM GprDaily WHERE Date <= ? "
-                             "ORDER BY Date DESC LIMIT 1", [str(as_of)]).fetchone()
-    if retrieved_at is None:
-        return {"status": "not_downloaded", "source": GPR_SOURCE, "note": "Run refresh-gpr for official index context."}
-    # A snapshot downloaded later cannot show what was known on an earlier date.
-    if not known_by(parse_timestamp(retrieved_at), as_of):
-        return {"status": "excluded_for_historical_as_of", "source": GPR_SOURCE,
-                "note": "Snapshot retrieved after requested date; not valid point-in-time evidence."}
-    return {"status": "ok" if latest else "no_observation", "latest": dict(latest) if latest else None,
-            "source": GPR_SOURCE, "retrieved_at": retrieved_at, "attribution": GPR_ATTRIBUTION,
-            "note": "Aggregate geopolitical news context only; not event severity, a market signal, "
-                    "or coverage of non-geopolitical risks. Latest observations may be revised."}
 
 
 # Runs, events and assessments ------------------------------------------------

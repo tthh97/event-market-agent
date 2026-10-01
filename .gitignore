@@ -4,7 +4,6 @@ __pycache__/
 .ruff_cache/
 output/
 # data/events.db is tracked. Backups and SQLite temp files are not.
-data/events_legacy.db
 data/*.db-journal
 data/*.db-wal
 data/*.db-shm

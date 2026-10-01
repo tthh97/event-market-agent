@@ -72,7 +72,6 @@ class Result:
     judgements: jev_api.Judgements
     unlisted: list[str]
     usage: list[dict]
-    gpr: dict
     market: dict | None
     search_calls: int
     start: date  # first day of a brief's period; as_of for a one-day brief or a follow-up
@@ -134,11 +133,10 @@ def run(request, adapters):
     if prior:
         tracked = {x["sector"] for x in prior["event"]["exposures"]} | {x.sector for x in brief.events[0].exposures}
         market = reactions(events_db.parse_day(prior["event"]["event_date"]), sorted(tracked), as_of, adapters.prices)
-    gpr = events_db.gpr_context(as_of, db)
     run_id, ids = events_db.save_run(
         "followup" if prior else "brief", question, as_of, brief, session.evidence, session.calls, judgements.status,
         judgements, market_metrics=market["metrics"] if market else (), usage=usage, db=db)
-    return Result(run_id, ids, as_of, brief, session.evidence, judgements, unlisted, usage, gpr, market,
+    return Result(run_id, ids, as_of, brief, session.evidence, judgements, unlisted, usage, market,
                   session.calls, start)
 
 

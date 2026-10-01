@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS Sector (
 -- One row per imported file or download. Sha256 blocks duplicate imports.
 CREATE TABLE IF NOT EXISTS DataImport (
     ImportId    INTEGER PRIMARY KEY,
-    Source      TEXT NOT NULL,            -- gdelt | gpr
+    Source      TEXT NOT NULL,            -- gdelt
     FileName    TEXT NOT NULL,
     Sha256      TEXT NOT NULL UNIQUE,
     RowCount    INTEGER NOT NULL,
@@ -42,13 +42,6 @@ CREATE TABLE IF NOT EXISTS GdeltEvent (
     ImportId       INTEGER REFERENCES DataImport (ImportId)
 );
 CREATE INDEX IF NOT EXISTS IX_GdeltEvent_EventDate ON GdeltEvent (EventDate);
-
--- Caldara-Iacoviello daily geopolitical risk index. Aggregate context only.
--- Replaced on each refresh; the latest DataImport row says when.
-CREATE TABLE IF NOT EXISTS GprDaily (
-    Date  TEXT PRIMARY KEY,
-    Gprd  REAL NOT NULL
-);
 
 -- Agent runs and results ----------------------------------------------------
 
