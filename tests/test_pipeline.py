@@ -10,12 +10,13 @@ import pytest
 import brief_run
 import events_db
 import jev_api
+import models
 import point_in_time
 import research_tools
-from brief_checks import validate_brief
 from brief_report import render_digest_html, render_html, save_reports
-from brief_schema import Brief
+from brief_run import validate_brief
 from events_db import candidates, import_gdelt, load_event, run_view, save_run
+from lead_agent import Brief
 from market_returns import calculate_windows
 
 
@@ -230,7 +231,7 @@ def test_first_sweep_reads_major_outlets_and_flags_every_source():
     assert 'reuters.com' in calls[0]['include_domains']
     session.search('markets')
     assert 'include_domains' not in calls[1]
-    assert not research_tools.is_major_outlet('https://notreuters.com/x')
+    assert not models.is_major_outlet('https://notreuters.com/x')
 
 
 def test_market_weekend_baseline_and_incomplete_windows():

@@ -18,7 +18,8 @@ import lead_agent
 from brief_report import render_digest_html, save_reports
 from jev_api import typesafe_call
 from market_returns import yahoo_close
-from models import MONTHLY_BUDGET_USD, ROOT, TIMEZONE
+from models import ROOT, TIMEZONE
+from point_in_time import today
 from research_tools import tavily_search
 
 OUTPUT = ROOT / "output"
@@ -67,13 +68,12 @@ def main(argv=None):
     for command in ("brief", "followup"):
         cmd = subs.add_parser(command)
         cmd.add_argument("question" if command == "brief" else "event_id")
-        cmd.add_argument("--date", type=date.fromisoformat, default=datetime.now(TIMEZONE).date())
+        cmd.add_argument("--date", type=date.fromisoformat, default=today())
         cmd.add_argument("--max-searches", type=int, choices=range(1, 11), default=8)
         cmd.add_argument("--jev", action=argparse.BooleanOptionalAction, default=True)
         if command == "brief":
             cmd.add_argument("--limit", type=int, choices=range(1, 6), default=5)
     args = parser.parse_args(argv)
-    today = datetime.now(TIMEZONE).date()
     try:
         if args.command == "import-gdelt":
             result = events_db.import_gdelt(args.path)
@@ -85,8 +85,6 @@ def main(argv=None):
             result = events_db.refresh_gpr()
         elif args.command == "cost":
             result = events_db.cost_summary(args.month)
-            result["budget_usd"] = MONTHLY_BUDGET_USD
-            result["budget_used_pct"] = round(100 * result["claude_cost_usd"] / MONTHLY_BUDGET_USD, 1)
         elif args.command == "digest":
             OUTPUT.mkdir(exist_ok=True)
             path = OUTPUT / f"digest-{args.start}-to-{args.end}.html"
@@ -98,7 +96,7 @@ def main(argv=None):
         elif args.command == "doctor":
             keys = ("ANTHROPIC_API_KEY", "TAVILY_API_KEY", "TYPESAFE_API_KEY")
             result = {"keys_configured": {k: bool(os.getenv(k)) for k in keys}, "timezone": TIMEZONE.key,
-                      "database": str(events_db.DB_PATH), "gdelt": events_db.candidates(today, 1), "gpr": events_db.gpr_context(today)}
+                      "database": str(events_db.DB_PATH), "gdelt": events_db.candidates(today(), 1), "gpr": events_db.gpr_context(today())}
         else:
             request = brief_run.Request(
                 as_of=args.date, max_searches=args.max_searches, jev=args.jev,

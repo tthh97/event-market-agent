@@ -211,13 +211,10 @@ Smoke-test JSON files in `output/` are integration evidence, not completed AI-ge
 | File | Job |
 |---|---|
 | `cli.py` | Command line: import, brief, followup, list, digest, doctor, cost. Wires the live adapters |
-| `brief_run.py` | One brief or follow-up from request to saved rows. Outside services come in as adapters |
+| `brief_run.py` | One brief or follow-up from request to saved rows, including the code checks before saving. Outside services come in as adapters |
 | `point_in_time.py` | The "known by the requested day" rule for sources, GPR and market sessions |
-| `lead_agent.py` | Lead agent, its prompt and the database guide. Built per run |
-| `researcher_subagent.py` | The event-researcher subagent and its prompt |
+| `lead_agent.py` | Lead agent, the event-researcher subagent, their prompts, the database guide and the Brief output shape. Built per run |
 | `research_tools.py` | Per-run research session (search budget, sources) and the agent tools |
-| `brief_schema.py` | Structured output: Brief, Event, Exposure |
-| `brief_checks.py` | Code checks on a Brief before saving, including which saved event it continues |
 | `brief_report.py` | HTML brief and digest pages, rendered from saved assessments |
 | `jev_api.py` | Optional Jev (Typesafe) scoring, returned as judgements per event |
 | `events_db.py` | All reads and writes of `data/events.db`, including the assessment view reports use |

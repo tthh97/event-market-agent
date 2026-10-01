@@ -11,6 +11,7 @@ from datetime import date, datetime, timedelta
 from html import escape
 
 import events_db
+import jev_api
 from models import TIMEZONE
 
 # Printed under every report, after the agent's own limitations.
@@ -230,7 +231,7 @@ DIGEST_STYLE = """
 .summary b { display: block; font-size: 26px; font-variant-numeric: tabular-nums; }
 """
 
-SEVERITY_LEVELS = ("minor", "moderate", "high", "severe")
+SEVERITY_LEVELS = tuple(jev_api.SEVERITY)
 
 
 def render_digest_html(events, start, end):
@@ -245,7 +246,7 @@ def render_digest_html(events, start, end):
         """Level in ink with a swatch from the strip's ramp, so it reads with the strip."""
         if x["max_severity"] is None:
             return '<span class="muted">no Jev score</span>'
-        lvl = SEVERITY_LEVELS[min(3, round(x["max_severity"]))]
+        lvl = jev_api.level(x["max_severity"], jev_api.SEVERITY)
         return (f'<span class="nowrap"><i class="swatch" style="background:var(--sev-{lvl})"></i>{lvl} '
                 f'<span class="muted">{x["max_severity"]:.1f}/3</span></span>')
 

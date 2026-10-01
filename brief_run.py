@@ -3,6 +3,7 @@
 Everything outside this process comes in through Adapters: news search, the lead agent, prices,
 Jev, GDELT downloads and the database file. cli.py wires the live ones; tests pass stand-ins.
 Patterns reused: trusted host runner (m4.2). Host code validates and saves; the agent only decides.
+validate_brief replaces a live LLM verifier with deterministic checks: counts, dates, citations, event tracking.
 Run: brief_run.run(Request(...), adapters), called by cli.py.
 """
 
@@ -17,12 +18,14 @@ from langsmith import traceable
 
 import events_db
 import jev_api
-from brief_checks import validate_brief
-from brief_schema import Brief
+from lead_agent import Brief
 from market_returns import listed, reactions
-from models import TIMEZONE, claude_cost_usd
-from point_in_time import today
+from models import TIMEZONE, cache_tokens, claude_cost_usd
+from point_in_time import known_by, parse_timestamp, today
 from research_tools import TOPIC_QUERIES, ResearchSession, make_tools
+
+# S&P 500 trackers are the benchmark, not an exposed name.
+BENCHMARK_TICKERS = {"SPY", "VOO", "IVV", "SPLG"}
 
 
 @dataclass
@@ -121,6 +124,57 @@ def run(request, adapters):
                   session.calls)
 
 
+def resolve_tracking(brief, followup_id=None, db=None):
+    """Settle which saved event each brief event continues, and enforce the tracking rules.
+
+    A follow-up is exactly one event, attached to followup_id. A brief event attaches only when the
+    lead set tracked_event_id. Either way the saved event must exist, keep its onset date, and be
+    used by at most one event. After this, tracked_event_id is the only link save_run needs.
+    """
+    if followup_id:
+        if len(brief.events) != 1:
+            raise ValueError("Follow-up must contain exactly the tracked event.")
+        if brief.events[0].tracked_event_id not in (None, followup_id):
+            raise ValueError("Follow-up returned a different saved event.")
+        brief.events[0].tracked_event_id = followup_id
+    tracked = [e.tracked_event_id for e in brief.events if e.tracked_event_id]
+    if len(tracked) != len(set(tracked)):
+        raise ValueError("Two events in one brief point at the same saved event.")
+    for event in brief.events:
+        if not event.tracked_event_id:
+            continue
+        saved = events_db.get_event(event.tracked_event_id, db)
+        if saved is None:
+            raise ValueError(f"Unknown tracked_event_id: {event.tracked_event_id}")
+        if saved["EventDate"] and str(event.event_date) != saved["EventDate"]:
+            raise ValueError("Tracked event changed the original event date.")
+
+
+@traceable(name="Code checks", run_type="chain",
+           process_inputs=lambda i: {"as_of": str(i["as_of"]), "limit": i["limit"], "events": len(i["brief"].events)})
+def validate_brief(brief, evidence, as_of, limit, followup_id=None, db=None):
+    if len(brief.events) > limit:
+        raise ValueError("Agent exceeded the requested event count.")
+    for event in brief.events:
+        if event.event_date and event.event_date > as_of:
+            raise ValueError("Event date is after the requested as-of date.")
+        symbols = [t.symbol for t in event.tickers]
+        if len(symbols) != len(set(symbols)):
+            raise ValueError(f"Duplicate ticker in event: {event.title}")
+        if BENCHMARK_TICKERS & set(symbols):
+            raise ValueError(f"Benchmark ticker listed as exposed: {sorted(BENCHMARK_TICKERS & set(symbols))}")
+        used = set(event.source_ids)
+        for item in [*event.exposures, *event.tickers]:
+            used.update(item.source_ids)
+        for source_id in used:
+            if source_id not in evidence:
+                raise ValueError(f"Unknown citation ID: {source_id}")
+            timestamp = parse_timestamp(evidence[source_id].get("published_at"))
+            if timestamp is None or not known_by(timestamp, as_of):
+                raise ValueError(f"Invalid publication date for {source_id}")
+    resolve_tracking(brief, followup_id, db)
+
+
 def drop_unlisted_tickers(brief, as_of, download):
     """Remove tickers with no recent price and note it in the brief's limitations."""
     found, status = listed([t.symbol for e in brief.events for t in e.tickers], as_of, download)
@@ -139,12 +193,10 @@ def usage_rows(claude_usage, judgements, search_calls):
     """RunUsage rows: one per Claude model, one for Jev, one for Tavily."""
     rows = []
     for model_name, u in claude_usage.items():
-        details = u.get("input_token_details") or {}
+        read, write_5m, write_1h = cache_tokens(u)
         rows.append({"service": "anthropic", "model": model_name, "calls": None,
                      "input_tokens": u.get("input_tokens"), "output_tokens": u.get("output_tokens"),
-                     "cache_read_tokens": details.get("cache_read") or 0,
-                     "cache_write_tokens": sum(details.get(k) or 0 for k in
-                                               ("cache_creation", "ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens")),
+                     "cache_read_tokens": read, "cache_write_tokens": write_5m + write_1h,
                      "cost_usd": claude_cost_usd(model_name, u)})
     if judgements.status == "ok":
         rows.append({"service": "jev", "model": judgements.model, "calls": 1,

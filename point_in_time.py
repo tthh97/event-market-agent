@@ -2,7 +2,7 @@
 
 A brief for day D may only use evidence that existed by the end of D in EVENT_TIMEZONE, and never
 anything later than now. Market windows use only US sessions that have closed.
-Run: imported by research_tools, brief_checks, events_db, market_returns and brief_run.
+Run: imported by research_tools, events_db, market_returns, brief_run, cli and evals/scorecard.
 """
 
 from datetime import UTC, datetime, time, timedelta

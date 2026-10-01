@@ -20,7 +20,7 @@ from uuid import uuid4
 import httpx
 import pandas as pd
 
-from models import ROOT, SECTORS, is_major_outlet
+from models import MONTHLY_BUDGET_USD, ROOT, SECTORS, is_major_outlet
 from point_in_time import known_by, parse_timestamp
 
 # EVENTS_DB points a run at another database file, e.g. a separate backfill.
@@ -54,6 +54,12 @@ def connect(db=None):
             yield con
     finally:
         con.close()
+
+
+def source_record(source_id, url, title, published_at, retrieved_at, excerpt):
+    """One citable source as the agents, the checks and the reports see it."""
+    return {"source_id": source_id, "url": url, "title": title, "major_outlet": is_major_outlet(url),
+            "published_at": published_at, "retrieved_at": retrieved_at, "excerpt": excerpt}
 
 
 def read_only_query(sql, db=None, max_rows=50):
@@ -311,7 +317,7 @@ def save_direction(con, exposure_id, direction, model):
 
 
 def cost_summary(month, db=None):
-    """Spend for one calendar month (YYYY-MM, by run creation time in UTC)."""
+    """Spend for one calendar month (YYYY-MM, by run creation time in UTC), against the monthly budget."""
     with connect(db) as con:
         runs = con.execute("SELECT count(*) FROM Run WHERE substr(CreatedAt, 1, 7) = ?", [month]).fetchone()[0]
         rows = con.execute("""
@@ -329,7 +335,9 @@ def cost_summary(month, db=None):
             "average_per_run_usd": round(total / costed, 4) if costed else None,
             "by_model": [dict(r) for r in rows],
             "note": "Claude cost only. Tavily credits and Jev usage are counted but not priced. "
-                    "Runs that failed before saving, and runs before usage logging, are not included."}
+                    "Runs that failed before saving, and runs before usage logging, are not included.",
+            "budget_usd": MONTHLY_BUDGET_USD,
+            "budget_used_pct": round(100 * round(total, 4) / MONTHLY_BUDGET_USD, 1)}
 
 
 def load_event(event_id, db=None):
@@ -343,9 +351,8 @@ def load_event(event_id, db=None):
         ids = [r[0] for r in con.execute("SELECT AssessmentId FROM Assessment WHERE EventId = ?", [event_id])]
         cited = list(dict.fromkeys(s["source_id"] for i in ids for s in assessment_view(con, i)["sources"]))
         sources = con.execute(f"SELECT * FROM Source WHERE SourceId IN ({','.join('?' * len(cited))})", cited)
-        evidence = {s["SourceId"]: {"source_id": s["SourceId"], "url": s["Url"], "title": s["Title"],
-                                    "major_outlet": is_major_outlet(s["Url"]), "published_at": s["PublishedAt"],
-                                    "retrieved_at": s["RetrievedAt"], "excerpt": s["Excerpt"]} for s in sources}
+        evidence = {s["SourceId"]: source_record(s["SourceId"], s["Url"], s["Title"], s["PublishedAt"],
+                                                 s["RetrievedAt"], s["Excerpt"]) for s in sources}
         event = assessment_view(con, latest["AssessmentId"])
     return {"event_id": event_id, "event": event, "evidence": evidence, "as_of": latest["AsOf"]}
 

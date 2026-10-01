@@ -14,7 +14,7 @@ from langsmith import traceable
 from tavily import TavilyClient
 
 import events_db
-from models import MAJOR_OUTLETS, is_major_outlet
+from models import MAJOR_OUTLETS
 from point_in_time import known_by, local_day, parse_timestamp, today
 
 
@@ -83,10 +83,8 @@ class ResearchSession:
             if not url.startswith(("https://", "http://")):
                 continue
             source_id = "s_" + hashlib.sha256(url.encode()).hexdigest()[:12]
-            record = {"source_id": source_id, "url": url, "title": item.get("title", ""),
-                      "major_outlet": is_major_outlet(url),
-                      "published_at": timestamp.isoformat(), "retrieved_at": datetime.now(UTC).isoformat(),
-                      "excerpt": item.get("content", "")[:4500]}
+            record = events_db.source_record(source_id, url, item.get("title", ""), timestamp.isoformat(),
+                                             datetime.now(UTC).isoformat(), item.get("content", "")[:4500])
             with self.lock:
                 self.evidence[source_id] = record
             found.append(record)

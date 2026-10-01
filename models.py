@@ -57,6 +57,15 @@ PRICES_PER_MTOK = {
 MONTHLY_BUDGET_USD = 10.0
 
 
+def cache_tokens(usage):
+    """(cache reads, 5-minute cache writes, 1-hour cache writes) from one LangChain usage_metadata."""
+    details = usage.get("input_token_details") or {}
+    read = details.get("cache_read") or 0
+    write_5m = (details.get("ephemeral_5m_input_tokens") or 0) + (details.get("cache_creation") or 0)
+    write_1h = details.get("ephemeral_1h_input_tokens") or 0
+    return read, write_5m, write_1h
+
+
 def claude_cost_usd(model_name, usage):
     """Cost of one model's LangChain usage_metadata. None if the model has no known price.
 
@@ -66,10 +75,7 @@ def claude_cost_usd(model_name, usage):
     price = next((p for name, p in PRICES_PER_MTOK.items() if model_name.startswith(name)), None)
     if price is None:
         return None
-    details = usage.get("input_token_details") or {}
-    read = details.get("cache_read") or 0
-    write_5m = (details.get("ephemeral_5m_input_tokens") or 0) + (details.get("cache_creation") or 0)
-    write_1h = details.get("ephemeral_1h_input_tokens") or 0
+    read, write_5m, write_1h = cache_tokens(usage)
     uncached = usage.get("input_tokens", 0) - read - write_5m - write_1h
     dollars = (uncached * price["input"] + read * price["input"] * 0.1 + write_5m * price["input"] * 1.25
                + write_1h * price["input"] * 2 + usage.get("output_tokens", 0) * price["output"])

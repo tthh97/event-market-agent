@@ -21,13 +21,13 @@ from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import yfinance as yf  # noqa: E402
 from langsmith import traceable  # noqa: E402
 
 import events_db  # noqa: E402
 import jev_api  # noqa: E402
-from market_returns import calculate_windows  # noqa: E402
-from models import MONTHLY_BUDGET_USD, ROOT, SECTORS  # noqa: E402
+from market_returns import calculate_windows, yahoo_close  # noqa: E402
+from models import ROOT, SECTORS  # noqa: E402
+from point_in_time import last_closed_session_day, today  # noqa: E402
 
 EVALS = Path(__file__).resolve().parent
 TICKER_SECTOR = {v: k for k, v in SECTORS.items()}
@@ -86,9 +86,7 @@ def direction_hit(direction, excess):
 def score(db, cutoff):
     firsts = first_assessments(db)
     window_start = min(date.fromisoformat(a["first_assessed"]) for a in firsts)
-    frame = yf.download(sorted(SECTORS.values()) + ["SPY"], start=str(window_start - timedelta(days=14)),
-                        end=str(cutoff + timedelta(days=1)), auto_adjust=True, progress=False, threads=False)
-    close = frame["Close"]
+    close = yahoo_close(sorted(SECTORS.values()) + ["SPY"], window_start - timedelta(days=14), cutoff + timedelta(days=1))
 
     calls = {w: [] for w in WINDOWS}
     magnitude = {w: [] for w in WINDOWS}
@@ -163,7 +161,6 @@ def labels(db):
 def scorecard(db, cutoff):
     month = datetime.now(ZoneInfo("UTC")).strftime("%Y-%m")
     cost = events_db.cost_summary(month, db=db)
-    cost["budget_usd"] = MONTHLY_BUDGET_USD
     result = {"database": str(Path(db).relative_to(ROOT)), "price_cutoff": str(cutoff),
               "scored_at": datetime.now(ZoneInfo("UTC")).isoformat(),
               **score(db, cutoff), "labels": labels(db), "cost": cost}
@@ -210,7 +207,7 @@ def main():
         pass  # applies schema.sql, which adds any newer tables to an older database file
     if args.fill_directions:
         print(f"Jev directions saved: {fill_directions(db)}")
-    cutoff = datetime.now(ZoneInfo("America/New_York")).date() - timedelta(days=1)
+    cutoff = last_closed_session_day(today())
     result = scorecard(db, cutoff)
     stem = Path(db).stem
     (EVALS / f"scorecard-{stem}.json").write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
