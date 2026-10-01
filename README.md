@@ -1,6 +1,6 @@
 # Event-first market agent
 
-An AI research agent that answers one question for a given day: **which world events matter for US markets, and who is exposed?**
+An AI research agent that answers one question for a given day: **which world events matter for markets, and who is exposed?**
 
 It starts from events, not prices. For a date, it reads dated news from major outlets and GDELT leads, then picks up to five significant developments of any kind: policy, business, conflict, infrastructure, weather. For each one it explains the channel to US sectors and names the most directly exposed US-listed stocks and ETFs, with every claim tied to a cited source. Jev then scores each event's severity, each sector's impact and direction versus SPY, and each ticker's exposure.
 
