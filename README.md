@@ -1,6 +1,17 @@
 # Event-first market agent
 
-Ask what significant events happened on a date, investigate potential US sector exposure, and save the assessment for an on-demand follow-up. General across event types: policy, business, conflict, infrastructure, weather, and others. This is a working first slice, not a deployed or continuously running monitor.
+An AI research agent that answers one question for a given day: **which world events matter for US markets, and who is exposed?**
+
+It starts from events, not prices. For a date, it reads dated news from major outlets and GDELT leads, then picks up to five significant developments of any kind: policy, business, conflict, infrastructure, weather. For each one it explains the channel to US sectors and names the most directly exposed US-listed stocks and ETFs, with every claim tied to a cited source. Jev then scores each event's severity, each sector's impact and direction versus SPY, and each ticker's exposure.
+
+The goal is a short daily watch list you can trust and follow over time:
+
+- **Grounded.** Only sources published by the end of the requested day can be cited. Code checks every citation, date and ticker before anything is saved.
+- **Tracked.** The same story keeps one event ID across days. `followup` researches what changed, and Python measures how the linked sector ETFs moved against SPY.
+- **Reviewable.** Each run writes an HTML brief and a JSON record. A date-range digest shows which stories stayed severe. `evals/scorecard.py` checks Jev's direction calls against real sector moves.
+- **Bounded.** Search and model-call budgets are fixed, and every run logs its cost against a US$10 monthly budget.
+
+This is a working first slice, run on demand from the command line. It is not a deployed monitor, a trading signal, or a causal estimate of market impact. So far Jev's direction calls have scored below a simple baseline (see Evals).
 
 ## Setup
 
