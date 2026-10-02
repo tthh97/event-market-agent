@@ -159,6 +159,24 @@ def test_output_writes_markdown_and_replies(tmp_path, monkeypatch):
     assert [i.value["topic"] for i in store.search(("findings", "2026-09-30"))] == ["Oil"]
 
 
+def test_output_writes_an_html_page_next_to_the_markdown(tmp_path, monkeypatch):
+    monkeypatch.setattr(output, "FOLDER", tmp_path)
+    monkeypatch.setattr(db, "PATH", tmp_path / "events.db")
+    claims = [Claim(text="Brent rose 3% <script>alert(1)</script>.", source_url="https://a.com/1",
+                    source_date="2026-09-29", sector="energy", unverified=True),
+              Claim(text="A bad link.", source_url="javascript:alert(1)", source_date="unknown")]
+    state = State(as_of="2026-09-30", jev_status="ok", severe=[story(severity=2.5)],
+                  findings=[Finding(topic="Oil & gas", summary="Oil rose.", claims=claims)],
+                  rejected=['Oil: "Brent rose 9%." (number(s) 9 not in the source)'],
+                  moves={"energy": (2.0, 1.8)}, price_window="Close 29 Sep to close 30 Sep.")
+    result = output.output(state, {"configurable": {"thread_id": "t1"}}, Runtime(store=InMemoryStore()))
+    page = open(result["report"].removesuffix(".md") + ".html", encoding="utf-8").read()
+    assert page.startswith("<!doctype html>") and "Oil &amp; gas" in page and "2.50 of 3" in page
+    assert '<a href="https://a.com/1">' in page and "Unverified" in page and "&lt;script&gt;" in page
+    assert "<script>" not in page and 'href="javascript:' not in page
+    assert "XLE" in page and "+2.0%" in page and "+1.8 pts" in page and "Brent rose 9%" in page
+
+
 def test_research_recalls_the_last_7_days_of_findings():
     store = InMemoryStore()
     claim = [Claim(text="Brent rose 3%.", source_url="https://a.com/1", source_date="2026-09-29")]
