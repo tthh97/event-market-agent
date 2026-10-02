@@ -4,6 +4,12 @@ A LangGraph graph that answers: **which of today's news stories could matter eco
 
 It takes the market stories GDELT saw most widely published in the last 6 hours, has Jev score their economic severity, researches the 3 most severe with Claude and Tavily, keeps only the claims code can tie to a source, shows how the affected US sectors moved, and writes a Markdown report. You can then ask follow-up questions in the same thread. Every step is a node in LangSmith Studio and a span in the LangSmith trace.
 
+## Why it exists
+
+In short, it filters global news down to the few stories that could move markets and only reports facts it can prove from a source.
+
+The main value is trust. AI news summaries can invent facts or numbers. This agent checks every claim against its source article, removes what it cannot confirm and records why. The result is a short, sourced brief instead of a pile of headlines.
+
 New to the project? Start with [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md). For the design in detail, see [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md).
 
 ## Quick start
