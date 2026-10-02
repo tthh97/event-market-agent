@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:351dba2dc3d91a3a9b8f3482fe7c98b1fb94ac560a3e41c8e03db428b48ca30c",
+  "claims": [
+    {
+      "id": "claim_f21c95d40ec24f4892411dd62c02aaaf",
+      "statement": "prices.py:price reads state.findings and state.as_of, and when no kept claim has a sector it returns empty moves and an empty price_window string without calling Yahoo Finance.",
+      "evidence": [
+        {
+          "resource": "repo://prices.py#L48-L53",
+          "version": "repo-lines-v1:sha256:b51e037378b5ca5b61a7cb0e95d5ae1b933d0061bfe258adf52c1eeb358dadfc:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjA5ZDhiZjViZTdhNjc3Y2Q3YjczODA4YjZkYTgzNTIyZGY3NTlkNzE3ZmRjYjY2N2YyNzU2OTM2OTBkZjkzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWE5NTg1MjgwZGVlY2FkMmVhMDk1NWJiOGFjNjhkNzEwNzg0YjQxYjhkNDA3MjMyMzUxYjUzYThmZGUwZmY1MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNiYzkyNjA5ZTcwZTgxMzMxZjEwMGI5MTIwYWQ2M2Q3NDM0YjgyZjE3NDFkN2E3ODdiYjc1YzA5NjViMDM3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2ZiMjIzZWVmMGEyYmIwMmE5ODRhMGEyOTdjNDgwZTRjZmQyZjRmMDhjYTQ1ZDBlMTU3N2E3MzA1MmIyN2EzMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7b64349c71634332a9e18b1e3d709459",
+      "statement": "prices.py:sector_moves maps each distinct sector on a kept claim to its SPDR sector ETF via SECTOR_ETFS, always adds SPY as benchmark, downloads adjusted closes for the 10 days before as_of up to min(as_of+1 day, today) with today's session excluded as possibly still open, and compares the last two remaining closed sessions to compute move % and vs-SPY percentage points.",
+      "evidence": [
+        {
+          "resource": "repo://prices.py#L16-L45",
+          "version": "repo-lines-v1:sha256:4bd68d396703c6bc61b3060288550e5fd6bbb98272e4ddce75d8d623a526740b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2MDhiNzliNDQ1YWFmNWE3Y2Q2MmRmMTIxNDdiNGU4Mjg4MzUxZjI1ZTA0MjEzYjUzYTY5MDQ3ZTQwY2ExNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2MmFjMDNlMWY0ODVkOWY3MWM2MTBlYWY3OTFhNWE0NTVhOWNkYWEyNGMwM2Y4ZTU2MTk1NGY4YTNhMDhkY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhMjM4NjY3NjNlZjRhNmNmNjlmYzc0Y2Q0NzVmNGZiNzQyZTViMWUwMDJiMDg1MjFhMDRjNzFjY2Y3NzA4ZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0NTM0NDEzMTdjZDk5ZWU2ZDIxNTIwMTkyMzMzMmQ1NzI3MDA3MWUyNTdiOTYzY2FhYTE3MWIyYzE0NDU4YmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_995008cd5499453abbe74598c9854737",
+      "statement": "sector_moves returns an explanatory price_window string instead of raising in three fallback cases: a download exception, SPY missing from the downloaded columns, or fewer than two non-empty sessions remaining after dropping all-NaN rows.",
+      "evidence": [
+        {
+          "resource": "repo://prices.py#L33-L45",
+          "version": "repo-lines-v1:sha256:edeeb54fbcfdac1c68a2bbddc980f21f43e894ab1ac27b78565a2f28e01709b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkYTVjNjZlMTdiMTQ1Mzk3ODM0YjhjODU0ZGM0MTkzZTIxMjUxODBhODk5NmExNGMzMTg4MzMyNmIyZWZiY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2MmFjMDNlMWY0ODVkOWY3MWM2MTBlYWY3OTFhNWE0NTVhOWNkYWEyNGMwM2Y4ZTU2MTk1NGY4YTNhMDhkY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4YTMzZmQyNWI2N2JjNzlkNmYzYjNkNmFhNTg4ZTc2Y2ExN2IzZThjMGViNTBlNzE3MGQ4MjU4NjcxZjNhMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0NTM0NDEzMTdjZDk5ZWU2ZDIxNTIwMTkyMzMzMmQ1NzI3MDA3MWUyNTdiOTYzY2FhYTE3MWIyYzE0NDU4YmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6991ef08e42d40f79a41c31280230556",
+      "statement": "prices.py documents, and every generated price_window string states, that sector ETF moves are observed correlations with a day's news, not proof of causation.",
+      "evidence": [
+        {
+          "resource": "repo://prices.py#L1-L7",
+          "version": "repo-lines-v1:sha256:a717cae15ca433c36f086a71e32ed2af586c3779231cf7be72979bd857eacb76:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjI1M2VlMTY2OTA2MjY0MDg2NzQ3ZDYwNjZhMDIzMGU5ZTFmMzg0YTIwMzJmNGJlNjExNWMzYWJmMWM1ZGRiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODQ1Yzc1NTRkN2E0YTI5NzE4MzU4ZTBkMjM0MGMxNDIxMmEyYWI3YTc2YWMxNTgxNTFhN2U2YjYwMDFjMTM0OSJ9"
+        },
+        {
+          "resource": "repo://prices.py#L43-L44",
+          "version": "repo-lines-v1:sha256:0aa15dd64cba4756c42412f76fb1394eba6edc76dbc3f5ff75960119762bf1c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2UzZWQ1YzlhNTc1NjgzZTQwZGM5OWI1Yzg4Njk2NzYyNjcyODkwYzY3OWU4M2VlOWI3NDM4YTYwYjM5MDE0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNkN2E5MDRjODJkNTljMmM4YmE1YjIxZTRhNjBmN2E4NDBkMzAwYzk4OGQyNzA0NTVkOGUxYjA4YWEyYTU5ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWMxNmViYTMyOGVkMWFlYTk1Yjk2ZGZhMDE5Mzc4N2E1NThlZWI2N2U2YjExYmIyMTcyOTE2ODdiZjlkZGUyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmNiYzkyNjA5ZTcwZTgxMzMxZjEwMGI5MTIwYWQ2M2Q3NDM0YjgyZjE3NDFkN2E3ODdiYjc1YzA5NjViMDM3YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_689942bdffb84a3491ff1ae4c903518f",
+      "statement": "output.py:output derives followup from state.report being already set, renders the Markdown report via markdown(state, followup), writes both a .md and a .json file under output/ named {as_of}-{thread}-{HHMMSS}, logs the run to events.db via log(), and returns {report, messages:[AIMessage(text)]} merged into state.",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L74-L88",
+          "version": "repo-lines-v1:sha256:b7ecbe2de72d0796a8ea48b533c6ac178d7dde62e54a6754127629db8dff01dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3YmEyMjFmM2ZlOWE3NWQ0NTdjMmMzYmNhZmE0MmJlYjAxODEyN2EzMzlmMjYzOWYzYjZjNTljN2ZiZjQ1YzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjODNlOWRlZjRlZDllMDEzYjg1MjVlNmMwNjVkYzI3ODFkNjFkYmYxNTk4YzlhY2UxMTQ4OGU0ZDkyYmFhMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NjgyZGVmOTBmZGVjY2Y5YTBmOWU4MTVjNjlkNTI0MzNjNTJkODdiYjg2Y2M2ZDc0NzRkNjAwMmEzMjYzNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bb89b25129b64922b257d27db85a2124",
+      "statement": "output.py:output calls research.remember to persist the run's findings into the LangGraph store for later recall, but only when runtime.store is not None and the run is not a follow-up.",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L86-L87",
+          "version": "repo-lines-v1:sha256:11e6f65f920f0c98bc13b77500c4ee7a512225989638d9c8d7d711cf589bccd6:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYwYjVkYWJkM2Y3OTZlYTMyNmI1NTZmOWE5NDBlNWNkZmYzZTZiODg0MmMwOTJmNmJjMzVmYjQ5YmRhODQ2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjRhYTdiOGU4ZjNmNjI3Y2UwNTZiYjQ3OWJkNjZkNzhkMDk5OWYyYmFkNTcwNmEyMjAwYzE2NjYxNDc5YThjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzljYTAwMTc3NjVhMmMzMWM1ZjlhMzRlOGJiNzQ0NmZkYzFjYzkxYjIzZGRmNjcyMTk4OTI2N2M1OTNkZmY5MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmM4M2U5ZGVmNGVkOWUwMTNiODUyNWU2YzA2NWRjMjc4MWQ2MWRiZjE1OThjOWFjZTExNDg4ZTRkOTJiYWEwNiJ9"
+        },
+        {
+          "resource": "repo://research.py#L89-L93",
+          "version": "repo-lines-v1:sha256:4e896374e17e932203e2d9cd7d634b1e366a140c1ff0d371344f889f6460af73:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFkOTUxMTMxMzg3ZDQ1M2IwYzk5NzllMzJhZWI3YzdkYzllMzA4ODZjYmQzNDNjZjI4YTdjN2JhYmYzNjQyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTJjNDgxM2MwNjIxOGQ2N2U3M2Y0MWMyMzdmZjMzNDM2NjkzMTU2YmQ2OTc0MDllMGZmZWQ3M2RjNzM0ZTkwNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzA1ZTAwZmEwY2UzMDAxZTNhMTYzODdhNDVhOWIyOTk4OTJjYzYyMzExYTQwZDFjMjFkYmE2OGE5NWVjZGQ1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2U1NWVhZGZhZjYyZWUzNTczNTI2MWYwM2YxZjAwNTUwMTRiNzkyMDdkN2JiZmFjODFmMDE5MzYzMTFmYzQ1YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7669e32ca1124295b44a44bd6048f935",
+      "statement": "output.py:markdown builds a header naming as_of and whether the run is Events or Follow-up, a triage line present only on new (non-follow-up) runs, and a verify line present on every run.",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L26-L30",
+          "version": "repo-lines-v1:sha256:48a193a26776efc9b1a7fb69f0ed4018a4d58c8afebbd22a40babb2ff2b5e32b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ1ZmRjZTBkMjRjMGFmOWNjZGRjMGY0Mzc2ZTY5YmRjODNjZWYyM2EzZmNhZGYyNTEzOWVmNDlkYjE1NGY1MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDU4MDIwMWMyYmM3MGY3NWZmNzgyYTVhZGQyOTg1ZjU5ODFhYTk0M2U2OWY3ZDliN2FiMmM0N2JhOTIwYmYwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWY2NzVlMDg0NDdjNmIwNDY1NWM4ODMzNDQ2YTcwODg4ODg3ZTE4OTQ3M2RkODNlODQ5ZWI3N2UzNDZiNDQxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWFlZjU1OWIwMDI0ZTk5ODdiMGMxODFkYmNmMjA0MGRmMDg5MDBhMzQwNzE0MGQzM2MxNmVjOGMxZjI2YWI0MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f7c077133adf4e548e05f6d3f29365ad",
+      "statement": "output.py:markdown renders one numbered section per finding; on new (non-follow-up) runs, findings whose index is within state.severe additionally get a line with Jev severity (or 'not scored') and GDELT article/site counts and lead URL from the matching ScoredStory.",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L31-L37",
+          "version": "repo-lines-v1:sha256:6b7cc9cbcae41c04fc794e6f1e3d924296da04086f1e9937291eeff18bde328e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjI1ZWZiMjM0YTZiNDlmNDI0MzFkM2Q2ZjNkZDIzYWZlMDRkM2M5M2Y5ODkzOGNjMDU3MjE0YjkyNmM3ZGE0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2FkOWIyOGE2N2EwOGU3OGI4ZGUzNWU2M2I4YTMwMGZlMjk1MTMyZGRhOGNhNzU0NjMzODA2OTM1MGVlYjc1YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzRkYzhmYjhhMDM2NzE1MDE2ZWQwMDY4OWYyNzI3MWMxNzYwMTJkZjNkMzAzNGUwYzIxYmYzZTIzYzAxYjk1NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGU1ZTRiYjczMTkxOTRmODMzMWMyNTM3OTczNmEwYzY0OTBlZmY3NjQyZGYyMmVjNmYxYTkxODJiNmQ1MWVjMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e96eff7757944fee87c8a36e168a0245",
+      "statement": "output.py:markdown lists each kept claim with its source link, source date, an inline 'Sector: <sector>.' suffix when verify assigned one, and an inline unverified-flag suffix when claim.unverified is true.",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L38-L41",
+          "version": "repo-lines-v1:sha256:922e3822c48af1006ded625b5503cb35231f764e2627e80ed124bd6060543619:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmM2NjNmMjNkYWUwOThhYmM2YTkwNDViOTc2OTAzNTlhZTZiOWZjMGMzM2ZhMTA4ODM2MGIzOGQwMzVkY2M2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODFlNjJjZDVlZjcxNzlkZWZiMDkzM2RmNzE1NzE5YWRkZTcyOGY5MjM0OWQ3OGYyNzExZTBhZWU5NGE1ZDg1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWFkNGE3NjUzOGNkNzU4NTdmMjIzYmNiZTI2NDc3ZjQ5ODliM2IzMDU5MTNmN2VkZDI5MWNlNDEyZDgwZjJlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMThkYzA4MmQ2Y2VkN2YzODU0NmY0ZTgyZmJhZjUxYTU4MWViZWU2NDc1OWY4NGMyODBiYjczMDk0MDAyZDFlNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b67779fecdce48889643fa817029143e",
+      "statement": "output.py:markdown renders a 'Market reaction' section whenever state.price_window is non-empty, with a Sector/ETF/Move/vs-SPY table built from state.moves and SECTOR_ETFS followed by the price_window sentence, and a 'Removed by verify' section whenever state.rejected is non-empty.",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L43-L50",
+          "version": "repo-lines-v1:sha256:82e0b93a60e1861943a6c486a8d374048d5c6ff14a53500db83745ffc4184b22:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjkxZjhlYzFkZmYwMDMwYTczMDJmYzQwYzI1NTQ5MTk3NzBkN2M0MDM3YjU3OWUzYjZjM2Y1Mjg3M2M5Y2ViNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EyNDgzNzg1N2UzMzcyY2UyNjE3MWFkYTUyNmUzM2JkZGRhMjljMDVlYzQ3ZmZkMTZjZWQ2MGJlMzY0MjM0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTdhMWNjYzhhZTBiZTJiZjI1NTgxZTk2OTVjMWM5NDk0ZDJkMTFlMDc4ZGRkZjgwMjdkNzE0MzFjYjVhZTZjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzExZDdiNDc4NDQ2MDZhMjQ4ZjM5YTVjYTA3ODhhMjM5NzI2YmEzNDVlMmUxYTVlNTFhMGFiOWU1ZmZiMzI0MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fac22ecd1ed94e75b28ed2ce82fd4a57",
+      "statement": "The follow-up Markdown variant (markdown(state, followup=True)) omits the triage line and every per-finding Jev severity/GDELT-count line but keeps the verify line, findings with claims and sector/unverified annotations, the market-reaction table, and the removed-claims section.",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L26-L50",
+          "version": "repo-lines-v1:sha256:fac71578f0c73422defd85c5cfa90426f8915c8b725a4f8b485affcab82a5677:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0NWZkY2UwZDI0YzBhZjljY2RkYzBmNDM3NmU2OWJkYzgzY2VmMjNhM2ZjYWRmMjUxMzllZjQ5ZGIxNTRmNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhMjQ4Mzc4NTdlMzM3MmNlMjYxNzFhZGE1MjZlMzNiZGRkYTI5YzA1ZWM0N2ZmZDE2Y2VkNjBiZTM2NDIzNDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmNjc1ZTA4NDQ3YzZiMDQ2NTVjODgzMzQ0NmE3MDg4ODg4N2UxODk0NzNkZDgzZTg0OWViNzdlMzQ2YjQ0MWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxMWQ3YjQ3ODQ0NjA2YTI0OGYzOWE1Y2EwNzg4YTIzOTcyNmJhMzQ1ZTJlMWE1ZTUxYTBhYjllNWZmYjMyNDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_79997f0edf61431fb88e8e1afc39b0c9",
+      "statement": "output.py:log appends, in one transaction with ON CONFLICT DO NOTHING on each table's natural key, a run row always, story rows only for new (non-follow-up) reports, and claim, rejection, and price_move rows for every run, to events.db's run/story/claim/rejection/price_move tables.",
+      "evidence": [
+        {
+          "resource": "repo://db.py#L34-L75",
+          "version": "repo-lines-v1:sha256:94ccc1aed2a31880159bc99d16ba030d96c5eea7ab9b858a3207bdda435231cc:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZmQzYTVlNThkODA4ZTJlYjdjMjFiNzk3NzUwYjNiZDk4ZGM5YWEzZWQ1MDU0ZmIzM2VhN2E5ODlmYmI3NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTY3ZWMxZWQzODM2ZjhlYjE3YWZmMTcyYjViZmVmN2RlNjA0ODVhNDM5YzZjYTExYzU5MWUxNzU1NzM5YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMWY1NjU3Y2Y5MzhjMWFiNzBkODEwOGRmNzU4MmM3YmRmMmRjN2QzODBkZDNjZjU0YTA0MjMxNGUzNjk4MWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4YWU2MGEwOWE3ODRiNDdlYTA4NTMxNmJmZjkyYzY4MDExZGQ2NzBkODlmMjhkYWY1ZGE5YmI2YWU0MWJjNDIifQ"
+        },
+        {
+          "resource": "repo://output.py#L54-L71",
+          "version": "repo-lines-v1:sha256:12c0a2b8047961c4499200d867666a61f176a34564bfb2641fda4e75dbe4a570:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMDNhMTJlZDhiZDA3NTMzOWQ2ZmEyNTczNmJiNjc3NmQ2MjU2NjM1OGU4M2E1YzI2MGMzZDRmMDlmOWM3MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0NDI4ZDQxNmRhYzhhMjU0OTVjNWY4YjhiNDU1ZTE0ZjRmMGQwM2Y0M2NmNzkyYTA5MGIzMDg4MmVlNmU1MGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMWQ3YjQ3ODQ0NjA2YTI0OGYzOWE1Y2EwNzg4YTIzOTcyNmJhMzQ1ZTJlMWE1ZTUxYTBhYjllNWZmYjMyNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwZmU2MjQ1Mjc0MzI0MjljNjlmM2EzNjUwOTQyY2UzNzBhOTM1ZjM5N2ZkY2I2MjgwNDgzZDkyOTRhMjY2OWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f7b68342bbb647e996b1acbeae667cab",
+      "statement": "The run_id used to key events.db rows is the same {as_of}-{thread}-{HHMMSS} string used as the base file name for the run's .md and .json report files under output/.",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L79-L85",
+          "version": "repo-lines-v1:sha256:e518d68d699ccd49e000bff454a06cb47af56a7de2a533c6ede88a35c89d1168:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzE0YmQ4ZjZjMmVkODkyODIzOWViY2U4MTg2ZDM0YTUyMGI0MzA4ZGFjMzM1MTE2YjQwZTA3ZDY5ZTUyN2Q0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWIwOTMwODRlZDU4ZWE0Y2M5ODY5OGI4NzRhN2MwNTE4OTRhMmUwODIyM2NiYmNiN2NmYzRhZGQ3OWYzMWY2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTUwMDI4NDc4MTg5ZmZkZDJlMmZmZTI4ZGUzYmU1YTdlNDNiNmY0M2UyNzI3ZTg1ZWEyYzZiOTI2MjYxYTRiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTE4MGNlNTBjODc4MjNlMzBjMWI2NTEzODZhMDQ5ZWFkYjdjMmNkZjU2NDNmNjhhYTYzNWNlOTkzYTQ4Y2ZmZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_829f899f5f0b4d61a0cacac1b7822c1a",
+      "statement": "The JSON report written alongside the Markdown file serializes only a subset of State fields (as_of, jev_status, severe, findings, rejected, verify_status, moves, price_window), excluding messages, stories, and sources.",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L83-L84",
+          "version": "repo-lines-v1:sha256:7686b63107fc44ce2fa76ccb8aa056eb40a39ae66d1465e6b51a2e2b1a1f4087:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI0NzA3ZmFhMjhkMjBmOGEzZTVkOGY5MGFkM2U0M2ViZjE3ZDFhZmQ5NDlkMTU4NWNiZDY4YzE1MzYyOGUwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM0ODVlY2YxOGRlOWM0Y2E0YzJiZjMyYmUwODY3NmRiZjgyM2E4NGU2ZmE0YjBhZTVjMjRkNDllNzQ5OGM0NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDVhMWQ1ZWJhYmFkMTAzY2I1MmFmZDdmOTIyMmNmMWNkOTBiOGVkOWVjZTBkNTM3ODVkNWE5ZGUzMTQ1MGRkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2RhNTQzZGJmNzBkNzIxMDhjMTliMDQ3MjRkYmE0Y2Q5MmQ3MjhkYmNmNTIzNDhhZTYwMmM5YmZiM2ZkNmFiOSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-02T09:22:29.186Z"
+  }
+}

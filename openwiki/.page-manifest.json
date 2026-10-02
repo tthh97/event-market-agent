@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "pages": {
+    "/openwiki/architecture/graph-and-state.md": {
+      "pageVersion": "sha256:ae2844297628950c36e708c384fd28758ee094b52912cf8f4de2f246790bfd13",
+      "completedBy": "openwiki/0.6.1",
+      "completedRunId": "e847d5a5-7e1d-42b0-9f41-3fa9a28587cf",
+      "gitHead": "0699efa527bbeb7310212d08eb8dcd6959f3353b",
+      "sourceFingerprint": "sha256:8fa91b06bfff9d936043856cf3facc7e20090b02ae28a1fbd557d22a06c3d909"
+    },
+    "/openwiki/architecture/persistence.md": {
+      "pageVersion": "sha256:f04ad090c8666fc941e40dca350a403f1ae59d738e564ba19cc04648f540e828",
+      "completedBy": "openwiki/0.6.1",
+      "completedRunId": "e847d5a5-7e1d-42b0-9f41-3fa9a28587cf",
+      "gitHead": "0699efa527bbeb7310212d08eb8dcd6959f3353b",
+      "sourceFingerprint": "sha256:8fa91b06bfff9d936043856cf3facc7e20090b02ae28a1fbd557d22a06c3d909"
+    },
+    "/openwiki/integrations/external-services.md": {
+      "pageVersion": "sha256:59fb51bed695e9a0db84300c6fb03c14d66ec1dca376a430fc17e12c487d91ed",
+      "completedBy": "openwiki/0.6.1",
+      "completedRunId": "e847d5a5-7e1d-42b0-9f41-3fa9a28587cf",
+      "gitHead": "0699efa527bbeb7310212d08eb8dcd6959f3353b",
+      "sourceFingerprint": "sha256:8fa91b06bfff9d936043856cf3facc7e20090b02ae28a1fbd557d22a06c3d909"
+    },
+    "/openwiki/operations/configuration-and-secrets.md": {
+      "pageVersion": "sha256:a197b8547e256ed8d9670ea453b96c33319261f42cfbaf393f00b8b26a2e4d2d",
+      "completedBy": "openwiki/0.6.1",
+      "completedRunId": "e847d5a5-7e1d-42b0-9f41-3fa9a28587cf",
+      "gitHead": "0699efa527bbeb7310212d08eb8dcd6959f3353b",
+      "sourceFingerprint": "sha256:8fa91b06bfff9d936043856cf3facc7e20090b02ae28a1fbd557d22a06c3d909"
+    },
+    "/openwiki/operations/running-cli-and-studio.md": {
+      "pageVersion": "sha256:9a2478b1aa8cb6e6077f1ffdbfec47e20270af7b7c5f8fa43a39ce2b60eb43a7",
+      "completedBy": "openwiki/0.6.1",
+      "completedRunId": "e847d5a5-7e1d-42b0-9f41-3fa9a28587cf",
+      "gitHead": "0699efa527bbeb7310212d08eb8dcd6959f3353b",
+      "sourceFingerprint": "sha256:8fa91b06bfff9d936043856cf3facc7e20090b02ae28a1fbd557d22a06c3d909"
+    },
+    "/openwiki/testing/test-strategy.md": {
+      "pageVersion": "sha256:120d60b7835e39244b4e001e7fd308d507fe17d3e12f2347379814fbec7e2ef6",
+      "completedBy": "openwiki/0.6.1",
+      "completedRunId": "e847d5a5-7e1d-42b0-9f41-3fa9a28587cf",
+      "gitHead": "0699efa527bbeb7310212d08eb8dcd6959f3353b",
+      "sourceFingerprint": "sha256:8fa91b06bfff9d936043856cf3facc7e20090b02ae28a1fbd557d22a06c3d909"
+    },
+    "/openwiki/workflows/event-pipeline.md": {
+      "pageVersion": "sha256:c0ebb4561566b63c1e2ae06f53659b352b5f94b00e6917aa1df784cbc2b07650",
+      "completedBy": "openwiki/0.6.1",
+      "completedRunId": "e847d5a5-7e1d-42b0-9f41-3fa9a28587cf",
+      "gitHead": "0699efa527bbeb7310212d08eb8dcd6959f3353b",
+      "sourceFingerprint": "sha256:8fa91b06bfff9d936043856cf3facc7e20090b02ae28a1fbd557d22a06c3d909"
+    },
+    "/openwiki/workflows/follow-up-questions.md": {
+      "pageVersion": "sha256:b636b782669502256776d933d09553178d296e24180a11a885aea6cab503036b",
+      "completedBy": "openwiki/0.6.1",
+      "completedRunId": "e847d5a5-7e1d-42b0-9f41-3fa9a28587cf",
+      "gitHead": "0699efa527bbeb7310212d08eb8dcd6959f3353b",
+      "sourceFingerprint": "sha256:8fa91b06bfff9d936043856cf3facc7e20090b02ae28a1fbd557d22a06c3d909"
+    },
+    "/openwiki/workflows/pricing-and-reporting.md": {
+      "pageVersion": "sha256:351dba2dc3d91a3a9b8f3482fe7c98b1fb94ac560a3e41c8e03db428b48ca30c",
+      "completedBy": "openwiki/0.6.1",
+      "completedRunId": "e847d5a5-7e1d-42b0-9f41-3fa9a28587cf",
+      "gitHead": "0699efa527bbeb7310212d08eb8dcd6959f3353b",
+      "sourceFingerprint": "sha256:8fa91b06bfff9d936043856cf3facc7e20090b02ae28a1fbd557d22a06c3d909"
+    }
+  }
+}

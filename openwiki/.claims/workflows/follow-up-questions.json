@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:b636b782669502256776d933d09553178d296e24180a11a885aea6cab503036b",
+  "claims": [
+    {
+      "id": "claim_d27a3c183a5a44abb87fba4769e988d0",
+      "statement": "A thread ID printed by one run only continues correctly against the same data/threads.db file, because main.py's SqliteSaver/SqliteStore pair persists the thread's checkpointed State keyed by thread_id in that single SQLite file, and graph.py's Studio-served graph object is compiled without this checkpointer at all.",
+      "evidence": [
+        {
+          "resource": "repo://graph.py#L1-L9",
+          "version": "repo-lines-v1:sha256:c2288c02950251fea3e1f233da838cacf260566c8829987fda90da7d7028ca30:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiOTVhM2Y2Y2I2ZjU1ZjBlODk0Yjk2NDY1OGY0Y2JhZGJlMWYzNGY0YzcwODIxZGY0NzhkMGM2Y2VkZWYwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTRmYzM5MDQ5Nzk4YTZmYzZkZGE2ZGEwNzE0ZjlmNzkyYWU2NWJiMWFmMTgwN2M3ZDljNjM5NWViNzJiNDYwOSJ9"
+        },
+        {
+          "resource": "repo://main.py#L49-L55",
+          "version": "repo-lines-v1:sha256:fe12d0d7d5f14b675afdacca7cb77725794c0f01f8df7153768d8a430acf7ea5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE4NjRjMWE1YTM0NjUxMmRlYzM1ZjAyY2FiYmE4MmEzMmYzYjI1OTYxZDc3NTU1NTg3NmU4YTU5YTRiZTRlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2N2ZhMTUxOTMyYmZlNTE4ZjY3ZmEwNTViNzhhYmM5MjU2ZmM2ODlkN2UyZmRlMjkxMjdiNmQ0OWQ3OTEwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWFkZDA5M2YwMjEzMzhlNmRmZWYyZjJjMjhkYTVhOWQ1ODQ1ZWViMWNiZTY0OWVmOGQ3MWQ2MDU0YTY4OWVmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzdkYTYxZDEwNWVmZjdlNTFiNGY2YzU2NWVhNWY5Mjk0MjQ4OGU3MjE3M2UyZWFhMTEwMzliMDY4MTExYjE3MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_840c1db4369b4f25b7972f3c920a3520",
+      "statement": "graph.py's conditional start edge routes a run to the `research` node instead of `gdelt` purely based on whether the resumed thread's state.report field is already set (i.e. a prior run in this thread produced a report), not based on whether a CLI question string was supplied.",
+      "evidence": [
+        {
+          "resource": "repo://graph.py#L22-L35",
+          "version": "repo-lines-v1:sha256:fea8db4ac5700e671f69ea8957ef72b71e0fd236cc689a31f8e99021e53b6247:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MGI5ZThkZTBmNjNhN2RmMDNmNzNiOGZlNGJiZmQ3N2YyMWUzNDQyNmM2OTY1YzFkZmNhMWM5ZjJlNWQzZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NDE5NmY0N2M4MjE4MjFhMjQwMjA2NTRjMzkyN2Y4MjZkMzliZjhkZDE4MTAwMjUzYmVmZjgzMGI0ZGMzZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwMmZhNDZjZWNiZmUyMzJkNDUzMGNhNDdiNDg2OWNjMjU2MzUyYjIwNDVjNzZkMjQyODllOTk2MjQ5NWRjMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxZTE5ODY5MTQ1NDA3NDRlNWMyMjY4M2NjMDgwMTkwMGU3NWZhNmRjNmUzNTVlNjI2YWRiNWFhMmI0ZDBjZTgifQ"
+        },
+        {
+          "resource": "repo://output.py#L74-L88",
+          "version": "repo-lines-v1:sha256:b7ecbe2de72d0796a8ea48b533c6ac178d7dde62e54a6754127629db8dff01dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3YmEyMjFmM2ZlOWE3NWQ0NTdjMmMzYmNhZmE0MmJlYjAxODEyN2EzMzlmMjYzOWYzYjZjNTljN2ZiZjQ1YzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjODNlOWRlZjRlZDllMDEzYjg1MjVlNmMwNjVkYzI3ODFkNjFkYmYxNTk4YzlhY2UxMTQ4OGU0ZDkyYmFhMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NjgyZGVmOTBmZGVjY2Y5YTBmOWU4MTVjNjlkNTI0MzNjNTJkODdiYjg2Y2M2ZDc0NzRkNjAwMmEzMjYzNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_412da0969cdc405889f5a071bce3eee4",
+      "statement": "main.py requires --thread whenever a follow-up question argument is given, and builds the follow-up's graph input as {\"messages\": [...]} (vs. {\"as_of\": date} for a fresh run), invoked as `uv run main.py --thread ID \"question\"`.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L39-L49",
+          "version": "repo-lines-v1:sha256:8499a7b9f1477385f8a4a99e4f9073726a506ab465b65696945ac2c4b330083f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZTMxMjU3ZGMwYWUxZDU5MzAzN2MyODBjOWFkNTA4MTliOGE2YzhjZjcyOGJlMDcxNmQwMGEzZWVjYzA0YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExODY0YzFhNWEzNDY1MTJkZWMzNWYwMmNhYmJhODJhMzJmM2IyNTk2MWQ3NzU1NTU4NzZlOGE1OWE0YmU0ZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwZTJhMWQ5NzM1NmJkNzcyOTlkYjM2Nzk2MzFkYzRiNDE3YmQ2ZTVlMjNiODIyZGY3MzYwYzk1YjdjNmE0YTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzMzkxNGViZGI4YTQ1OWU1ZWE4ZDM4NzE0MDRkZWFkYzVjNzY0NWI2ZDU0M2YxOGJjZTkwZjI4N2FmZWQzMGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8e28082a9e9a4502a83ade7682c948fa",
+      "statement": "On a follow-up (state.report set), research.py's research node builds exactly one research topic combining the latest message's text with a semicolon-joined list of the thread's existing Finding topics, instead of building one topic per severe story as a new report does.",
+      "evidence": [
+        {
+          "resource": "repo://research.py#L133-L146",
+          "version": "repo-lines-v1:sha256:3f0ba5b4e8bbc7b90d1e8493cb1c3cf04924d23452387c1aebeb94ebffe31331:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MTg5MzRkZDE1ZThjZDc0MmVhZjI0M2JmYzYxZWRkNDhiMWZlZjgwMDI1YTk4MTExMGRmYjc3ZTU2OGFjMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4MGVlYTNlYmU3NzA5NWE1YjZkNTVmODkyYjY2ZTNkOGQ4MjU0OWExZDhiMjBiNjBjZWYyNjM5MDA3NzNlNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlYzRlYzZiYjk4N2Y0M2I1YTUzM2QzNmIyZjZkZTk2MDNmNmU5MWNhN2Y1ODQ1ZDM5MjBiNjY2OWQwOTA3ZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f61487ce848477b8c0c251a1606b2dc",
+      "statement": "The 7-day findings-memory recall (research.py's recall(), reading the LangGraph store) only runs in the new-report branch of the research node; a follow-up's research call skips recall entirely and relies only on the thread's own state.findings topics carried into the single new topic string.",
+      "evidence": [
+        {
+          "resource": "repo://research.py#L133-L144",
+          "version": "repo-lines-v1:sha256:161481f6d697298c03c72df2d2612c95a8c0843d7dec21cd60d371837b900963:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MTg5MzRkZDE1ZThjZDc0MmVhZjI0M2JmYzYxZWRkNDhiMWZlZjgwMDI1YTk4MTExMGRmYjc3ZTU2OGFjMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxOWMyODFiNzQ3YWFhYmVlMThjOTdkZTNhNzhlZDlkOTkwN2QzZTUyMThjZDQ3YTAyMWJmNDIxMWUyZWY1ZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlYzRlYzZiYjk4N2Y0M2I1YTUzM2QzNmIyZjZkZTk2MDNmNmU5MWNhN2Y1ODQ1ZDM5MjBiNjY2OWQwOTA3ZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwYTM2YWI1OTk2MTU0ZTNhNmM2MWExOTJmM2RkOTBkMTAxZjc1YTBlNjA3ZDY4OWNhZDE5MDljNWI1ZWM2ZDQifQ"
+        },
+        {
+          "resource": "repo://research.py#L79-L87",
+          "version": "repo-lines-v1:sha256:76bb162bae0892c4b55676285d8915bc4fd5554292076fbb6e23ba1ad8b5c16b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWNkZWE2YjM5ZTI1ZTNlMjNhODk1NzE4MGIwZTU4NDY4NWQ5ZGMyMjlmZTJhOGM3MmUxY2Q5ZmU0YWU4ZTFmNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTViZjY1ZTY2NWU0ODdhMzNjNjg1MjVkNmYzZTIyNjFjNWNmMGYxYTQ5MzgxMDA0ZGFjNzNiYWRhNGYxNDc1ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzg4NGUxNzBmN2QxYWM1MjRkNWU3MTI4NGQ3Nzc0Zjk2NGQ3ZTdmZTMwY2VmYTE1NzNhNDY1NWFiYTVmMDAyZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_125e474962ed4b32b733c5a70cfae494",
+      "statement": "Because State.findings and State.sources have no custom reducer, a follow-up's research node overwrites them: state.findings becomes the single new Finding for the follow-up question and state.sources becomes only the articles that follow-up's searches returned, replacing (not merging with) the prior run's values; verify and price then replace state.rejected and state.moves accordingly for this new findings/sources pair.",
+      "evidence": [
+        {
+          "resource": "repo://research.py#L144-L146",
+          "version": "repo-lines-v1:sha256:687838f53e802f877e6039fe69714f97c6480f43830dad33cfb9aa39e0bbaf72:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE5YzI4MWI3NDdhYWFiZWUxOGM5N2RlM2E3OGVkOWQ5OTA3ZDNlNTIxOGNkNDdhMDIxYmY0MjExZTJlZjVkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzgwZWVhM2ViZTc3MDk1YTViNmQ1NWY4OTJiNjZlM2Q4ZDgyNTQ5YTFkOGIyMGI2MGNlZjI2MzkwMDc3M2U0OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjhkNGQxY2ZiYTA3MjhiNDdmNzg4MTc2ZGZjZTRhN2Q1YWQ4NTcwN2IzZGU2NzhhMjJkN2Y4NTVmZDZlMzEzZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://state.py#L54-L66",
+          "version": "repo-lines-v1:sha256:ee3d49e77aac1960f45c7d25c7f6f64938ebfba409df8da242be0e9446f0837d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjOTdiZjdlODdkOWQwNTVmZWI1YjFjOWViYmI5YmNmNDc5YmYyMDdhOWI1ODhiOTE5ODJmYTZkZTE1OGMwMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlMDRlMzY1NmI5NDA1N2I5YWE1MTJiNDRkNzRlMjFhZDdlOGZiODMyZTVjYTk1MWVlOTBkMjBkZDE3MDM0YjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3M2RmYjhiMGYxZWEzOWU1YmM5ZDMxZTk4NDZhMTZjNmFhMTZhZjUxYWU1N2QxZGIwMmYxODBkZjYzY2JhZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2NWVkMDA0OWI1NjhhYTczNDA4Mzc0NzE3YTgwYmM3YjI0ZDk2ZjNhOTViMjExNGNmMzM4OTg1ODkwYzA5YWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0fc544770bc74611bf685f69ab09c6ac",
+      "statement": "A follow-up bypasses gdelt and triage entirely, so state.severe and state.jev_status remain exactly as set by the thread's original run; output.py's markdown() only renders the triage section and includes severe/jev_status when state.report was not already set (i.e. not on a follow-up), so the follow-up report omits them and is titled 'Follow-up as of ...' instead of 'Events as of ...'.",
+      "evidence": [
+        {
+          "resource": "repo://graph.py#L22-L41",
+          "version": "repo-lines-v1:sha256:85e13ec85a9188063dad2f0b9d3f9fbf93be29785bf9e2223fff6a6f0a644e98:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MGI5ZThkZTBmNjNhN2RmMDNmNzNiOGZlNGJiZmQ3N2YyMWUzNDQyNmM2OTY1YzFkZmNhMWM5ZjJlNWQzZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzYjNmYWVjMTlhZWRjMWEzYWExOWNhNGI0M2VjZDQ2MTlhOWQxNzQzYzYzN2VkZTg0YTgyNGYxZDk5MGQ2ZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwMmZhNDZjZWNiZmUyMzJkNDUzMGNhNDdiNDg2OWNjMjU2MzUyYjIwNDVjNzZkMjQyODllOTk2MjQ5NWRjMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5MGM5ZDlmNWQ0ZjhhZjVjZjViOWVkZjg4N2ZmYTYwZjI3NjJiODYxZmEwZjk1MTcxMjQ5N2Y5OTE0MmQ3ZDIifQ"
+        },
+        {
+          "resource": "repo://output.py#L26-L29",
+          "version": "repo-lines-v1:sha256:beb561a4eaf372e55fece142e61bef7356df0498c35e5ca46fec1c7d5c56ec7a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ1ZmRjZTBkMjRjMGFmOWNjZGRjMGY0Mzc2ZTY5YmRjODNjZWYyM2EzZmNhZGYyNTEzOWVmNDlkYjE1NGY1MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjkwZDRlZTYxYThhMDRiYzA5NzVmYmM1N2U0MDUwMmI4ZGVlMDMxODU3NjVhNDI3ZDg5ZDM3ZDk3Zjg5YWI3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWY2NzVlMDg0NDdjNmIwNDY1NWM4ODMzNDQ2YTcwODg4ODg3ZTE4OTQ3M2RkODNlODQ5ZWI3N2UzNDZiNDQxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQ1ZjE1M2Y0YjM4ZGJjMTcyZWViZjY2ZmJhZTFmZmY4NDliZDVmMGE4NDYwZGZjYWNiYjc0ZGQ3NjNmOTI0NyJ9"
+        },
+        {
+          "resource": "repo://output.py#L33-L36",
+          "version": "repo-lines-v1:sha256:85c14b6f479dbc098a659db68ce9cf7bc939a086b855e8b39d183da65e68eaea:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIyYTk2MzdjYjU2YWQ2NjA0MDY1NDZiNWM1MWYyMGJmZTQxMjc0OGYxYjRjOGI0NmQ3MGUzMzVhNDQ3NTMwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDdkMDNmOWJhODZhOTJlMmY2MTllOWQ4NDRkMGJlZTIwNGY2MjE4ZmYyZjUyN2E4NWNkNGM1NzMzOGQ5MTQzNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmQ1ZjE1M2Y0YjM4ZGJjMTcyZWViZjY2ZmJhZTFmZmY4NDliZDVmMGE4NDYwZGZjYWNiYjc0ZGQ3NjNmOTI0NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2YzOGJhYjI5MWMzZTljMjk2MTc5ZjI0MTk4OTk3YWRhYzJmZDZkOWY1OWU2M2MxYjU0NTE3ZTBmNzMzZTdiMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bb46b1f71ee14cd3b91fa76ac1a00cd8",
+      "statement": "A follow-up's output step logs a run row with kind='followup' but does not insert new story rows into data/events.db (since state.severe describes the original run's stories, not new ones), and skips remember() so the follow-up's one-off finding is not written into the 7-day findings-memory store.",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L54-L87",
+          "version": "repo-lines-v1:sha256:18bbb3299ffd6c0c4e395e46f4acf5a2f482b3291d1565016748b7de6e93016a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMDNhMTJlZDhiZDA3NTMzOWQ2ZmEyNTczNmJiNjc3NmQ2MjU2NjM1OGU4M2E1YzI2MGMzZDRmMDlmOWM3MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0YWE3YjhlOGYzZjYyN2NlMDU2YmI0NzliZDY2ZDc4ZDA5OTlmMmJhZDU3MDZhMjIwMGMxNjY2MTQ3OWE4YzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMWQ3YjQ3ODQ0NjA2YTI0OGYzOWE1Y2EwNzg4YTIzOTcyNmJhMzQ1ZTJlMWE1ZTUxYTBhYjllNWZmYjMyNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjODNlOWRlZjRlZDllMDEzYjg1MjVlNmMwNjVkYzI3ODFkNjFkYmYxNTk4YzlhY2UxMTQ4OGU0ZDkyYmFhMDYifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-02T09:22:29.186Z"
+  }
+}

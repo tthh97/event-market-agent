@@ -3,10 +3,12 @@
 __pycache__/
 .ruff_cache/
 output/
-# data/events.db is tracked. Backups and SQLite temp files are not.
-data/events_legacy.db
 data/*.db-journal
 data/*.db-wal
 data/*.db-shm
 .pytest_cache/
 .lavish/
+data/gdelt/
+data/threads.db*
+data/events.db*
+.langgraph_api/

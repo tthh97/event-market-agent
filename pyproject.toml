@@ -1,23 +1,28 @@
 [project]
 name = "event-market-agent"
 version = "0.1.0"
-description = "On-demand event research, sector exposure, and saved follow-ups"
+description = "LangGraph event research: GDELT stories, Jev triage, sourced research, verified report"
 requires-python = ">=3.11,<3.15"
 dependencies = [
-  "deepagents==0.7.0",
   "langchain-anthropic",
   "python-dotenv",
   "pydantic>=2",
   "tavily-python",
   "typesafe-sdk",
-  "yfinance",
-  "pandas",
-  "xlrd",
-  "httpx",
   "langsmith>=0.14.2",
+  "httpx",
+  "langchain>=1.4.3",
+  "langgraph>=1.2.12",
+  "langgraph-checkpoint-sqlite>=3.1.1",
+  "yfinance>=1.7.0",
+  "pandas>=3.0.6",
 ]
 [dependency-groups]
-dev = ["ruff>=0.15.17", "pytest"]
+dev = [
+    "ruff>=0.15.17",
+    "pytest",
+    "langgraph-cli[inmem]>=0.4.32",
+]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 ignore = ["E501"]

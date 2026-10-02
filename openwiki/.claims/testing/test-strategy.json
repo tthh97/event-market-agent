@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:120d60b7835e39244b4e001e7fd308d507fe17d3e12f2347379814fbec7e2ef6",
+  "claims": [
+    {
+      "id": "claim_fbe6fc026eae4d25a81b4d217745be4c",
+      "statement": "triage.py and verify.py isolate their Jev (Typesafe) calls behind the module-level functions triage.jev_scores(stories) and verify.jev_checks(claims, as_of), which tests/test_nodes.py replaces via monkeypatch.setattr instead of stubbing the TypeSafeClient/HTTP layer directly.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_nodes.py#L115-L121",
+          "version": "repo-lines-v1:sha256:37ae0512865b3391a4cbe7c60cf6fc88e526098cc734ee84ce328b25a4d001ff:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODE4ZWY2ZDVjNzY1OTkxMzhjMWQ1N2I5ZTNmZDcxMjQ3NmE5MGJlOTA0NDI5ODhiMWExMmY4MDk1NjMyNjVlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDA2MjUxYTk1MmMxODQ0MWEwZmMzYWZlYjE2NzVmMGQyNTQyM2EyNmIyODdhODg2OTYyNDNhMDA3MDUwYjYzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODljZjQ3ZWQxMjJmMjUxMGEyMDZmMjM1NjhlZTI2YjM2MzQ4MjE5ZjNjNDY3OGY1MDY0YzZlNGNlZjA5ZjBmMSJ9"
+        },
+        {
+          "resource": "repo://tests/test_nodes.py#L180-L194",
+          "version": "repo-lines-v1:sha256:9a33e45c6a561f02fb3acc1d4d4d21f76dfe67420492cc5e77e548781d82da2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0M2MwYWRkNDE2OWZjNWFkMDczM2RlMDgwODk1YjY0MWY0NTQ2ZTBmYmQ4Y2ZlZWZiZDQxYWI1NDg5ZWNmOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhZTE2ODQ1ZjM4NmUzZjAxOTdjMTY2ZGQ0YTlhMDA3M2UzYzJiMThlYTZiNjNiYmUyMWNmNjE0NWYwZmMxZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NjhhNDJhZDEzOGYwYTVmZTc4NzIzMjliNzNjZGI2YzdiODZjOTg2ODVlOTcyZWJlNjRiYWFkNWY0MzMwNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmMThjMTg4MDQ2YzEzNjBmYjFjNTBmM2M3Mjg1ZWE4OTExZGViZGU1NTFiYzM2NzMxOGRjMTU2Zjg3YmU2OWUifQ"
+        },
+        {
+          "resource": "repo://triage.py#L36-L44",
+          "version": "repo-lines-v1:sha256:8f6e9543ac82a284e850d9572175c496d0b1f9dce49438b86f639f526252a446:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM5OTg1ZTFiYTJmNTM2ZjcxNDAxOWVhM2Q2OTI0MWNiMjg5NDk1MTYzMDU2NThjZWI5MTZiMmIxNDQ0YjFkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJjZjdkZjBmNmYxZTVlZTk5YjYwZmViMzNiNGJkMjYxOGQwZjgzMGE0ZWMyMTZlNDY4ODRiZTZmYjkwNmYyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzI1NmU3MGYzYzg1MmUyOTkxNjUyOTEwZDlmYjRmOTY0YWYwNDE2ZTY2MThhMzY2Mzg0NTVlZDk5ZGQyNGZkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWQ2ZmJjMGU0YTBiYmFlMmIzMTAwYjMzMjI2YmNlNTNjYzE0ZmVlNjQ0MzhkMjc3ZDdlODY1Mjk0MDMzNjM3MiJ9"
+        },
+        {
+          "resource": "repo://verify.py#L42-L57",
+          "version": "repo-lines-v1:sha256:7626951232c1ffd41e8ae79d8699c0fcea82105904f86e7690f7beb1a33eeba4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2MjM2MDE2ZjBmZTVkY2NjNmNkYjBlMTdiYzMzM2JjZjEyNzg5ODljZTQyMmI4MDkyYWYwOWE0MzI1YjM0NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjODQyNjYzMjQ1ZDU5NjZmZmI0ZWNjNjdiNDBjZjg4NGQwMzE4ZTkwOWE5NTZiMTFiZjMyY2FmYWE1ZDMzMTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0ZjljMWNlODNlOGUyNjJkNDczZGFhODcxYjViNzlmYzY5MGY4YzQ0OTJhMGI0YWE3MGI5NzE5NTIyMzYyYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyZDZiZmUyYTgyMjhlZjkyNmZkYmVjNWNmMmM1MmIxZWFkY2MxODdkNDczYWI1ZTRlMTkwYTE0MmZmNmQ2YjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5e2aafac06cd46769fd24114062a8f7a",
+      "statement": "triage.triage and verify.verify branch on os.getenv(\"TYPESAFE_API_KEY\"): tests toggle this with monkeypatch.setenv/delenv to exercise the Jev path (ranked severity, Jev-checked claims) versus the no-Jev fallback (most-mentioned stories with severity=None; code-only URL/number checks), each reporting a distinct status string.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_nodes.py#L115-L140",
+          "version": "repo-lines-v1:sha256:d03908cc59e21c86e605f5619c561d5aba171231c8126ebcea253b9367d1b80f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxOGVmNmQ1Yzc2NTk5MTM4YzFkNTdiOWUzZmQ3MTI0NzZhOTBiZTkwNDQyOTg4YjFhMTJmODA5NTYzMjY1ZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwNjI1MWE5NTJjMTg0NDFhMGZjM2FmZWIxNjc1ZjBkMjU0MjNhMjZiMjg3YTg4Njk2MjQzYTAwNzA1MGI2M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0MTAyOGY3Y2E4MmU3Yjc5NzVjZmMxYTQ3Yjk1MDE2M2RjOWM0NThjNWZkNGUwODAwMzQ2MDAzN2FmMWZmZTcifQ"
+        },
+        {
+          "resource": "repo://tests/test_nodes.py#L180-L195",
+          "version": "repo-lines-v1:sha256:44d352d5fcdc0d4ff42eff85c1bf863686fdfe6c2d41ffef63ebfb50371ae893:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0M2MwYWRkNDE2OWZjNWFkMDczM2RlMDgwODk1YjY0MWY0NTQ2ZTBmYmQ4Y2ZlZWZiZDQxYWI1NDg5ZWNmOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NjhhNDJhZDEzOGYwYTVmZTc4NzIzMjliNzNjZGI2YzdiODZjOTg2ODVlOTcyZWJlNjRiYWFkNWY0MzMwNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1YWEzZGQzNzBlZmNiYTMyYzhiOWZmNWMwYjRlNjJkYWYzM2M4Y2FhMzI5MzFiOGI2NDI2NmU5ZTY1MzgzMDYifQ"
+        },
+        {
+          "resource": "repo://triage.py#L47-L59",
+          "version": "repo-lines-v1:sha256:2f25e1f74be8cd39b7f1fa5023fe947cb09a371bf4836182efefcea8ed4d1c78:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5YjRmN2I2M2U2ZWM5NWFjMTVjOGI3ZTFhNzhhNjE3ODJlZjYyMjljNWNkZDE1NWI4OWMwMzg2NWIyOTBkNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3MzY0MmFhZWY3MDM4NDE1YWI3YmY4ODg4NTcyYWZiZTc4NjI3YmVhMTY3YjcyYzM1NzgxOGUwZTU0MDc2ZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3ZjVjZjZlMGJkMzE5NGRlMTMyODg4ZTgxMmMyNmQyZDVhNzA3OTc0ZDBlOGU4Y2U2N2VlNDg5YmRhOGMyYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://verify.py#L79-L98",
+          "version": "repo-lines-v1:sha256:e17d5453e95d9a79863d36059276986eb19dfe05724a9d53ceee26a8c570598e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMGE5ZWEzODhhZTNiMDEwY2M2NWJlYTA1NzgxZTdhMDEyYjIxMjk5MmE4MThkY2E3YTM2OTRmNDc1NDNiY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3Y2IxYmE5M2YwZGNhMGFkMTI0Zjk2YmU3Y2Q2NTE5ODViNjVkN2YwMzNkZjMyY2NlNTNlYWJkZDc0MDNmMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkYTViNTAxYTlkMTRhYTdmYzE3YTVhYWQ1OTliMTdiOTBkYTMyZjI0OTZjZTI0NDgzMTczNThhYmU0ZGZkZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4ccc73c2409346aa8d4c63345650f6de",
+      "statement": "test_output_writes_json_and_markdown_and_replies exercises output.output end-to-end by monkeypatching output.FOLDER and db.PATH to tmp_path and passing a real InMemoryStore, then asserts on the written Markdown text, the sibling JSON payload, the reply message content, the run/story/claim/price_move rows written to events.db, and the store item written under (\"findings\", as_of) for later recall.",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L54-L88",
+          "version": "repo-lines-v1:sha256:eee46fa4238c4527b4a5a356a6d9912a6cf4c4baf34cc53aa89b6d0077aa492b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMDNhMTJlZDhiZDA3NTMzOWQ2ZmEyNTczNmJiNjc3NmQ2MjU2NjM1OGU4M2E1YzI2MGMzZDRmMDlmOWM3MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjODNlOWRlZjRlZDllMDEzYjg1MjVlNmMwNjVkYzI3ODFkNjFkYmYxNTk4YzlhY2UxMTQ4OGU0ZDkyYmFhMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMWQ3YjQ3ODQ0NjA2YTI0OGYzOWE1Y2EwNzg4YTIzOTcyNmJhMzQ1ZTJlMWE1ZTUxYTBhYjllNWZmYjMyNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/test_nodes.py#L142-L161",
+          "version": "repo-lines-v1:sha256:1fb9e25cab44e9f21c5c81c06796eafa8e7b426cdd0f518914e57a36dd6b0cdf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhYmYzMWUzYjY5OWNmNmY2ODlkNWJmNjJiNjFhNGRkOWFhODM5YTdlZjI0YzczMmJlYzJlZTE0NWZjYzk1OWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkMmMxYWRlNDg5ZDEzMTljZWRmODExZDAyY2Q0NDcwOGEyNzZjZmMyNWU2MDNiYmU2OWZlODE2MDYwMjI1OTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1OTA4M2NmYTYwOTEwZWM3ZTNmNDgyMjU2YjhhMGNkNzYzYTc2NzNkNjM2ZmJmMWJmNDFlMDRkYThiNzc1NTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzZDIzNWU2YmY3MGIzMGRhMmVlYjYzZjlmYjYxNzNkNzI4ODM5YmUwZjE1MDY0NTA0Y2E4NTJkNjliZDRhZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f34bad4e9f8642eb84137e842b56e5b5",
+      "statement": "prices.sector_moves accepts its data-fetching dependency as a download parameter (defaulting to yahoo_close), letting tests inject a canned pandas DataFrame instead of calling yf.download/Yahoo Finance; the test also asserts every value in moves is a plain Python float (not numpy.float64), guarding against a checkpoint-incompatible numpy scalar leaking into State.moves.",
+      "evidence": [
+        {
+          "resource": "repo://prices.py#L22-L45",
+          "version": "repo-lines-v1:sha256:9a75f093c4998197d8516835d1ebe2dc6b87e586fa50d29ff6978462b4ff21ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3MDUxZDU2YmFiOGE3MzE1MWE3NjNjMzFjNmIwZGRiM2Y4MjE3MTIzZjVmY2E4YjA5MTU2ODAxYmNlZmRkN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2MmFjMDNlMWY0ODVkOWY3MWM2MTBlYWY3OTFhNWE0NTVhOWNkYWEyNGMwM2Y4ZTU2MTk1NGY4YTNhMDhkY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxNjE3ZWEzMWYyMmY5ODE1NDFhYjdlYTU4NjJmYTNjODkzOTg5OTRiNjRmMzEzZDgxZjRlM2EyNzQzZjE1ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0NTM0NDEzMTdjZDk5ZWU2ZDIxNTIwMTkyMzMzMmQ1NzI3MDA3MWUyNTdiOTYzY2FhYTE3MWIyYzE0NDU4YmQifQ"
+        },
+        {
+          "resource": "repo://state.py#L64-L70",
+          "version": "repo-lines-v1:sha256:ed75f9c2b0f68d4e7f77424643909c262b14050cc80dcee6a554df79c6fe4db7:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmRjNWNlMmQxYWVkNGFlMjk4MTY4NmRmMmRiMmUxYmE1MWNkYmIxOTY2ZTM4NzEyZTk2NTA3MjQxMjc5MmNjYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjcyZDA3MWQ1MzhjMDU3YjJmZjY0NDgyZGZmZmU5YzFlZGFhMjQyMzhhNDc4MTRkN2RiYTczZDJiOTkxNTcwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzAwOTIxZWY4Yjc1OTdiNGZlYjNhZThiYmQ4OTE3MDE5NDMyMWI4ODRmZWUwZDgyMmY3MDYxODdhNmYwM2FkYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://tests/test_nodes.py#L197-L206",
+          "version": "repo-lines-v1:sha256:e286e7cf74e1f7c7c3824b0803e08d7701b394739ef9c7add34ad27affbc2023:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhNTRiNzcxZTVjMGI3NWFiOTRiOGE0YjMzYzQ1ZGIzYTU0YThlNTRiNmM5N2QzMDAzYTAwYmI3ODE3NTFlMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5MjVmZTY0MzQzNTMyZTBiZWUzM2FlNzNiZTVjNDQ3MjIwOTczNmIyYThlZTJjMDQyYjhjYzgxZGI3NTFiNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxM2FjYTQzMWQyMzUxYzg4ZDkxMTQzZWVlMmU5ZWViYjA2MzAyNTU2NDRkOTA4NTU4MDVlN2NiZGMyNDNjODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyNTZjMGEyNjg5NTA4Mzc3NDUyOTBjMTQ2N2ZjMmYyMWMxZGFmMzQ2OWZkZTVhMTM4MjViMmMwOGYwMGE4ZjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_531d29ed66de48c1a46f9f627ad717ee",
+      "statement": "research.read_articles is tested by monkeypatching research.create_agent to a factory returning a fake object with only an .invoke method returning canned Notes; the research agent's full tool-calling loop (research_topic/agent.invoke with TavilyClient and the live chat model) is not exercised by tests/test_nodes.py because it requires live Claude and Tavily calls.",
+      "evidence": [
+        {
+          "resource": "repo://research.py#L70-L76",
+          "version": "repo-lines-v1:sha256:1940eab5c5b1bd8a9d9764369e22deda3dc32f4bf52b3b7f4db821917a8c8468:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGM5MGI1NWU0ZjUwYzkxZmM4ZWZjNmM0ZGY4Njg3MDFjZGE5YTNiNWUzYWYxZjEzOGFjZjRlMDg5MmExOTNlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYThjMTkyNDRlNjAwNjdlYTlmNjRkODE2MWExNGE1NjhjYzZkYzE1ZDY1Yzk5MGRiZTFmYWJhNGQ1ZDU4M2Q5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTkxYTljZWI2YWVlMWRkYzJhNjlmMDQ5ZmRlNTUzYTUyODgyMjU4NTFlZmY3NmI0MTdhOGJhMTE0NjY2M2Q3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmQ1ZjkzZjVhOThiMTJiMmI4NzZjNzc1MzkwNmVmOWFiNzJlYWE2ODVlZjdhNGY0NWI1OGU5YmIyMjAzMDI1MiJ9"
+        },
+        {
+          "resource": "repo://research.py#L96-L130",
+          "version": "repo-lines-v1:sha256:abc04a6564911a544ac4747a7ac0062f05cc29e220af4d6ae83afb0a8b36d383:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTcyMzhiZWUzY2FmYWY1ZGQ3ZTQ0MTA1OWEwM2QzMjBkYWM2MWQ1MjhhMjQ1Njk2Njc3ZTE5ZjY1YjI5ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYmZjOTE4YWZiZjQ3MDAxZTBhZjE3YzhlZjUyMDliZjQyOTQxNDU2MjcyMjFhNWRiZGNlNjIyYjJlNTFkNjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkMjgyYTIwNTZjNDVkZjFiMjVhZmExYWVjM2FmOGJhOGZhNTliNWZmOGM2ZDY3ZWE0YWM5Y2Y4YTk3YzI1MDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiZDI3ZGNlZDMzZWQ0NjJmZDU3N2U1ZmRjMDM5ZDU4OGE5MGU3NDIwOTVhYjJkNWNjNzUwMGFmNjBmOThlMjkifQ"
+        },
+        {
+          "resource": "repo://tests/test_nodes.py#L214-L226",
+          "version": "repo-lines-v1:sha256:c61a1865d8528ecc8e7aa1ebdb0f6391ce931e9468d4148e481a7493112c4d2b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxYTJhMWEzNjZkNzE3YzE0YTIxMDA1NWRiOTcwN2I0MTBmZDcwNjgwYzJjZTYzNTY2ZTFkYjM5MTRlZThlZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2ZGZkMTIxYmFjMjBjNzdjZmQ1MmM1N2I3Y2FhYTM3MmZiZjA3ZThkMDhhMGI5YTczOWRhMWM4Mjc4MDVhZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhM2NmNTE5MjM1NGY3MTYxNWFjNTEwMzRiM2U5N2MyMGVkYTk5NjQzZmNhZjViYmU2ZDQxYWQ1OWJkMTIxNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_01326d7ae2dc4b97824835a01f9d2ef4",
+      "statement": "tests/test_nodes.py provides gkg_row/zipped/gkg_files helpers that build a fake GDELT server (a get callable plus the list of URLs it was asked for) returning synthetic zipped GKG text, so gdelt.py's market_rows/top_stories are tested without any real HTTP request; each GDELT test uses its own tmp_path/events.db so caching and incremental-download behavior can be asserted precisely.",
+      "evidence": [
+        {
+          "resource": "repo://gdelt.py#L72-L123",
+          "version": "repo-lines-v1:sha256:38a753d4b3877576977893c747a00774e3066b94d5407c186b47e891ba6a6d87:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViYzZkYTA3NWU2NDNiNDA2Y2YzMWM1N2NmODA1NjAwNTg5ODBhMDFhZjUxMzdlM2E5ODA4MTM0OGYxMTRkZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1NzU2OTc5N2NkYzU5ZGVkNjJiMDg1YjNhNjA5YWMxNGU1NjEwMTFkZTYzNDQyMGRkMmQxMThhM2Y0NmQ2ZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwNGFmMTdhZTQ1YzYwODhjMGRmY2VhNzE1OGYyMTM3OWIxMWU1Njc3ZmE2ZjFlNzM4ZmExYmI3ZjU4ZjY4MGIifQ"
+        },
+        {
+          "resource": "repo://tests/test_nodes.py#L30-L113",
+          "version": "repo-lines-v1:sha256:df154a1bc58fccc2d402b9b086faefe48478b556dad5f2a65410594b260a1882:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlM2UwMGJmOWY3OTkxNDBlMzgyYTZhM2NiZGVmYTVkMDEzMTgwMDIxNTg2MjIyZTQ5OWRiZTA4OWNlMTY1MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiMzdhY2VlNGI1YTAyNTM1ZWU0Y2E1ZWNjZmE1NmY2MmUzN2I5NWEwOWJhYTZhNGZkYzQwZjI5NGYwNWIzYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyZGY1Nzg1ZTM5MjVkZDlmN2Q3ZWI1MTY4NTczMmIxMzc4N2U2YjM1N2JiYTg1M2UyNWFlMmVlODczYzgxOTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4ed5b517ca1f4e56bef57c5281c75adc",
+      "statement": "The project runs tests and lint via `uv run pytest -q` and `uv run ruff check .`; pyproject.toml sets pythonpath = [\".\"] and testpaths = [\"tests\"] so the root-level modules (db, gdelt, output, prices, research, triage, verify, graph, state) import directly without a src layout or installation.",
+      "evidence": [
+        {
+          "resource": "repo://pyproject.toml#L26-L31",
+          "version": "repo-lines-v1:sha256:813dabf47797726a6d52b30420c9460919e8ada0bd6372c563a8fcdc82b241a1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmNjNDRkYjI1MTc2NzZkYjY0MWE2Zjk3NzlhNTM2MDJjYzljZGNjNDQwNDlhOTUxYjUwMjVkY2M1YzNiMWU2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDEwODVhZDA5MDQyNTcxMWFkYjRmMTVmMjhlMjVjMTcxMDc5MmMxZDQ1ZGE3Mzk0ZWU5MTJlMDM4MTkwNDU5MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWU5OGRmN2QwMmFkMWYzMjg4YTQ2Y2RiYTcyOWE2YTQ5ODVmNTI5OWI0NjRiODQxNzkxMDM5MTNiNmNlNzBlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://tests/test_nodes.py#L1-L26",
+          "version": "repo-lines-v1:sha256:07479077a9bfb34ff031a71d79e0fec5552b3b11d06639350f5c0900fcc9c5b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3NTJiMDE4ZjVlZjU2NjRkMTVmNGRiYzNiZWRkMTM1ZjMxM2VhODdmYjZmMTM5YTI2Yzc4YTQ5ZjA4NTdiYjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyNTcxZmI2MGI4ZDBjOGIzYTFjYWJkMmRiMTJhOGJiYjE3NThhYWNhOWUwYjVkMWIzNTljNmJiMjkwNDYxZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiMzdhY2VlNGI1YTAyNTM1ZWU0Y2E1ZWNjZmE1NmY2MmUzN2I5NWEwOWJhYTZhNGZkYzQwZjI5NGYwNWIzYzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b08dc5640f5f4df7855d089b7a076481",
+      "statement": "test_follow_ups_skip_to_research calls graph.start(State(...)) directly to verify the conditional-edge routing function: it returns \"gdelt\" for a fresh State and \"research\" once state.report is set, without building or invoking the compiled graph.",
+      "evidence": [
+        {
+          "resource": "repo://graph.py#L22-L24",
+          "version": "repo-lines-v1:sha256:5a8f6611562fb63e294c9efab2e22c9a7b8d4176e739f6a753ce4a853f4f2607:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTkwYjllOGRlMGY2M2E3ZGYwM2Y3M2I4ZmU0YmJmZDc3ZjIxZTM0NDI2YzY5NjVjMWRmY2ExYzlmMmU1ZDNlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJlZjVlZjUzNDE0MDMxMDgzODMzZmZiNDY2Y2JmYmZkNWI5ODA0NzQ0ZTkxNGIzN2U2NjY5NzgyMTI0ZDc2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjAyZmE0NmNlY2JmZTIzMmQ0NTMwY2E0N2I0ODY5Y2MyNTYzNTJiMjA0NWM3NmQyNDI4OWU5OTYyNDk1ZGMwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQ4Y2Y2MTMwOWE3MDU1ZGViNWQwZjE0NmUxN2E0MWE5YjQ1ODhlOWNlNjY5MTlmODAwODc0NGZmOTJlMGU4ZSJ9"
+        },
+        {
+          "resource": "repo://tests/test_nodes.py#L175-L177",
+          "version": "repo-lines-v1:sha256:10b04113a1f0a4b449b4697e254daa46db04a9067ba16ddf45e8110a851e0b81:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDJmNWViMmQwOTFiZjA4ZTI2Zjk0ZTViMTY3ODlhNDBkNjRhZjQ2NjY0ZmM3ZGJmYzM0ZDZkM2YwYzU4YjA3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZjNjQyOGIzYjczMjUzOWJiN2Y3ZjQ3Yzc0OTQzMjY5YzNkZjY1MzBkYWI3N2JkZjA2ZWU3MjMyNzQ0YTRjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjk5MDZhMzZhNWY1MzA2NjM2Njg5Mjg0OTNlYTVhYjhmMGI0OWZhMTZiZmY4Mjg0MTVmMGJhODJlOWY3YzQ4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2M4MjZjY2RlNjJkMmJmYTU3MTExNTMxY2Q1ZWQ4YmYxZjQyMTdmNjNlNTg5MmNiMWI1YThiZjg2MjRjODIzYSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-02T09:22:29.186Z"
+  }
+}

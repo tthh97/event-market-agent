@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:ae2844297628950c36e708c384fd28758ee094b52912cf8f4de2f246790bfd13",
+  "claims": [
+    {
+      "id": "claim_b1ff1c70ebff4ecb90f32493d821035c",
+      "statement": "graph.py:build constructs a StateGraph(State) with six nodes (gdelt, triage, research, verify, price, output) wired in a straight line via add_edge, and returns the uncompiled builder so callers choose their own compilation/persistence options.",
+      "evidence": [
+        {
+          "resource": "repo://graph.py#L27-L42",
+          "version": "repo-lines-v1:sha256:c7fab433df22d316feff355ab14f0346009957417c0eb99ca87656e323247218:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNjJhYmU2Y2MwNmU5MDBjODExYjU0NTRkZmE1ZmFkOTRjZDMyZmMwYTBkMzI2ODgzMGI4NDViMzYzNDJhYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlNTdiMWM4Y2FjYzgyZGQwZGRiMGYyZWJkMDg5MTlkNjgzZTdkZTdlZmRlMjZmYzc1NzE3NjUwZDg0M2YxMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4ZTdlNzg5OTQwOWY5ZmNkYzEzZDlkMDFlZTFhYzU5M2QzMWU4MDFhOTM1NmY0YjNhMDAzNzkyM2Q3MDI3N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4NzllYWNlMjMyNzI5NzFkYmYzNWJhNDkwMWYwNWM5MTI5MGYwNTFmNGI5MWZiN2Q4MjRkMTgzNTFlYmVmNDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bef0a8d5215f483d9610d2021575dea4",
+      "statement": "graph.py:start is the conditional function attached to the START edge; it routes to \"research\" when state.report is already set (a follow-up in an existing thread) and to \"gdelt\" otherwise (a new run), making State.report the sole signal distinguishing a follow-up from a new run.",
+      "evidence": [
+        {
+          "resource": "repo://graph.py#L22-L24",
+          "version": "repo-lines-v1:sha256:5a8f6611562fb63e294c9efab2e22c9a7b8d4176e739f6a753ce4a853f4f2607:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTkwYjllOGRlMGY2M2E3ZGYwM2Y3M2I4ZmU0YmJmZDc3ZjIxZTM0NDI2YzY5NjVjMWRmY2ExYzlmMmU1ZDNlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJlZjVlZjUzNDE0MDMxMDgzODMzZmZiNDY2Y2JmYmZkNWI5ODA0NzQ0ZTkxNGIzN2U2NjY5NzgyMTI0ZDc2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjAyZmE0NmNlY2JmZTIzMmQ0NTMwY2E0N2I0ODY5Y2MyNTYzNTJiMjA0NWM3NmQyNDI4OWU5OTYyNDk1ZGMwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQ4Y2Y2MTMwOWE3MDU1ZGViNWQwZjE0NmUxN2E0MWE5YjQ1ODhlOWNlNjY5MTlmODAwODc0NGZmOTJlMGU4ZSJ9"
+        },
+        {
+          "resource": "repo://graph.py#L35-L35",
+          "version": "repo-lines-v1:sha256:754196f47c821821a24020654c3927f826d39bf8dd18100253beff830b4dc3ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzU0MTk2ZjQ3YzgyMTgyMWEyNDAyMDY1NGMzOTI3ZjgyNmQzOWJmOGRkMTgxMDAyNTNiZWZmODMwYjRkYzNlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzU0MTk2ZjQ3YzgyMTgyMWEyNDAyMDY1NGMzOTI3ZjgyNmQzOWJmOGRkMTgxMDAyNTNiZWZmODMwYjRkYzNlZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjM4ZGVlOWEyOTI5OTJjOWNjMWFjYTQ5NDNhY2QyNDY5NjU4MmQ3ZjJhYmQxZTdiNTBmNzBkN2MxMmM4MjUyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjFlMTk4NjkxNDU0MDc0NGU1YzIyNjgzY2MwODAxOTAwZTc1ZmE2ZGM2ZTM1NWU2MjZhZGI1YWEyYjRkMGNlOCJ9"
+        },
+        {
+          "resource": "repo://state.py#L66-L66",
+          "version": "repo-lines-v1:sha256:be04e3656b94057b9aa512b44d74e21ad7e8fb832e5ca951ee90d20dd17034b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmUwNGUzNjU2Yjk0MDU3YjlhYTUxMmI0NGQ3NGUyMWFkN2U4ZmI4MzJlNWNhOTUxZWU5MGQyMGRkMTcwMzRiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmUwNGUzNjU2Yjk0MDU3YjlhYTUxMmI0NGQ3NGUyMWFkN2U4ZmI4MzJlNWNhOTUxZWU5MGQyMGRkMTcwMzRiMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTVhYzQ4MDUzYTA2YWM1NDU3MmQwZjQwZTk2MzI5YjVmN2Q5ZTkwMzEwY2RhNzZhOTA3YjhhNTI4NzE3NGYzZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzY1ZWQwMDQ5YjU2OGFhNzM0MDgzNzQ3MTdhODBiYzdiMjRkOTZmM2E5NWIyMTE0Y2YzMzg5ODU4OTBjMDlhZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_407556e3955a4cd1a0594c77654cf15c",
+      "statement": "main.py selects the graph input based on whether a follow-up question and --thread are given: a new run supplies {\"as_of\": date_or_none}, a follow-up supplies {\"messages\": [...]} against an existing thread id, so the checkpointer-loaded State.report for that thread is what graph.py:start inspects.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L39-L53",
+          "version": "repo-lines-v1:sha256:065d7fedc9355eb9cee2797a3a7646619d542666479991c3ef65880fc436f8a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZTMxMjU3ZGMwYWUxZDU5MzAzN2MyODBjOWFkNTA4MTliOGE2YzhjZjcyOGJlMDcxNmQwMGEzZWVjYzA0YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkMDBlNzRkZGU2Njc0MzQzYzM1NjQzZmI5MTQ5ZmVkYmU0NzU5MDFmMmI3ZDkxOTgzNjg5ZDA5ODU3MTljZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwZTJhMWQ5NzM1NmJkNzcyOTlkYjM2Nzk2MzFkYzRiNDE3YmQ2ZTVlMjNiODIyZGY3MzYwYzk1YjdjNmE0YTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViZGY3NDQxOWU2NTJmMzMwMjEzOTM3ODA1ZGJlMGI1NDkzYmVlZTY1MzhkZmZlMTBmMmUwYzA5ZTk5NTMzZjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef026166bdd14926a86e14ab67548aea",
+      "statement": "state.py:State is a single Pydantic model shared by all graph nodes; each documented field is written by exactly one owning node (as_of/stories by gdelt, severe/jev_status by triage, findings/sources by research, rejected/verify_status by verify, moves/price_window by price, report/messages by output), and nodes return partial dicts that LangGraph merges into the running state.",
+      "evidence": [
+        {
+          "resource": "repo://state.py#L54-L66",
+          "version": "repo-lines-v1:sha256:ee3d49e77aac1960f45c7d25c7f6f64938ebfba409df8da242be0e9446f0837d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjOTdiZjdlODdkOWQwNTVmZWI1YjFjOWViYmI5YmNmNDc5YmYyMDdhOWI1ODhiOTE5ODJmYTZkZTE1OGMwMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlMDRlMzY1NmI5NDA1N2I5YWE1MTJiNDRkNzRlMjFhZDdlOGZiODMyZTVjYTk1MWVlOTBkMjBkZDE3MDM0YjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3M2RmYjhiMGYxZWEzOWU1YmM5ZDMxZTk4NDZhMTZjNmFhMTZhZjUxYWU1N2QxZGIwMmYxODBkZjYzY2JhZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2NWVkMDA0OWI1NjhhYTczNDA4Mzc0NzE3YTgwYmM3YjI0ZDk2ZjNhOTViMjExNGNmMzM4OTg1ODkwYzA5YWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_994646060e0645e5bc0f6b09e6e070b8",
+      "statement": "State.messages is annotated with LangGraph's add_messages reducer so new messages are appended/merged by id rather than replacing the list, unlike every other State field which uses last-write-wins replacement.",
+      "evidence": [
+        {
+          "resource": "repo://state.py#L55-L55",
+          "version": "repo-lines-v1:sha256:308b5997a6ec87ae67194fe8af0d9f2f1af8bedf8ba1db685e2e4eacef7a8d17:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzA4YjU5OTdhNmVjODdhZTY3MTk0ZmU4YWYwZDlmMmYxYWY4YmVkZjhiYTFkYjY4NWUyZTRlYWNlZjdhOGQxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzA4YjU5OTdhNmVjODdhZTY3MTk0ZmU4YWYwZDlmMmYxYWY4YmVkZjhiYTFkYjY4NWUyZTRlYWNlZjdhOGQxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjIwYTUwYTRlMWYzNGMzMzEzZDU0OGIxZjY0MzBiNjg2ZDA2NDcxMzk0NzcxN2RmOGZjMjY1MmIwMWZmNmRjOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmUwZTI3ZDVhZDY4MTRhZjliMTdmZDI0NWNkMTRkYmYxNmQ2ZGI1MjI3YmI1Y2JiOTM4YjkyNDc2MjBhMTg3ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_38d06d842b7c4ad29745c3987d1fb62c",
+      "statement": "state.py defines five auxiliary Pydantic models populating State's list/dict fields: Story (GDELT story grouping), ScoredStory (Story plus Jev severity/confidence), Claim (one sourced factual sentence with sector and unverified fields set by verify), Finding (topic/summary/claims produced by research and filtered by verify), and Source (one retrieved article, the only URLs a claim may cite).",
+      "evidence": [
+        {
+          "resource": "repo://state.py#L15-L52",
+          "version": "repo-lines-v1:sha256:5d37b545a958aa32af28adca78d0628b3c75c9ac47943d52c3c98631afb8432b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5ZmJiODliZjc1MmI2YzFiYzEwMjhmZGJlOGQ3NGE4M2EyZmY1MDJhMzc1ODA4YWY0ZTY0NjUwMTA3NThmMzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImViNTM1NjZiZWRkNDA3N2I0NGEyOGZlOTQwOTFkZjdmMDg5NjgwN2NjNGM1ZjQ5MGRlZDE2N2JkNWU5YjNmNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3MjE3ZDc4ZjliYWQ0NjkzNmVmOGM1OWYwMjdlNDFlNjdkYmE1ZWYxZGQ4N2FiNDAyODZjNDE3MTYyNDNhNGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7d72d0962d0a4e4993d78edf4f2a2393",
+      "statement": "CHECKPOINT_TYPES lists the (module, class name) pairs for Story, ScoredStory, Claim, Finding, and Source, and main.py passes it as allowed_msgpack_modules to JsonPlusSerializer so the SQLite checkpoint serializer will deserialize only these State-nested model types, refusing anything else found in a checkpoint.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L53-L53",
+          "version": "repo-lines-v1:sha256:8d00e74dde6674343c35643fb9149fedbe475901f2b7d91983689d0985719ce8:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQwMGU3NGRkZTY2NzQzNDNjMzU2NDNmYjkxNDlmZWRiZTQ3NTkwMWYyYjdkOTE5ODM2ODlkMDk4NTcxOWNlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQwMGU3NGRkZTY2NzQzNDNjMzU2NDNmYjkxNDlmZWRiZTQ3NTkwMWYyYjdkOTE5ODM2ODlkMDk4NTcxOWNlOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjMzOTE0ZWJkYjhhNDU5ZTVlYThkMzg3MTQwNGRlYWRjNWM3NjQ1YjZkNTQzZjE4YmNlOTBmMjg3YWZlZDMwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWJkZjc0NDE5ZTY1MmYzMzAyMTM5Mzc4MDVkYmUwYjU0OTNiZWVlNjUzOGRmZmUxMGYyZTBjMDllOTk1MzNmNiJ9"
+        },
+        {
+          "resource": "repo://state.py#L69-L70",
+          "version": "repo-lines-v1:sha256:d199d6b7d636d6831881a96c4e13005b179073f7db245a511e92d11c50229ba8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQ2OWVkYjllZjU5Zjc0Yjc3MzIzZmMyZDUwMjQxODA0ZmQ3ZjllODkxMzU4MzNiYTMxMmQyMWQzZTBhYWI1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjcyZDA3MWQ1MzhjMDU3YjJmZjY0NDgyZGZmZmU5YzFlZGFhMjQyMzhhNDc4MTRkN2RiYTczZDJiOTkxNTcwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjNiOGMyMGZiNjFkODBmNGNiMTI5YThlZjI4NWNmZGNiNzNkZDEwOGQxMjQ0YzhkZmM1ZjIyMGI4MWVhMmM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2a33826eae024e0fa1c63dd6cfe0afc3",
+      "statement": "graph.py exposes two differently-persisted compiled graphs from the same builder: the module-level `graph` (build().compile() with no checkpointer/store, used by langgraph dev/Studio, which supplies its own persistence) versus the app main.py builds (build().compile(checkpointer=saver, store=store) backed by data/threads.db), so Studio threads/memory are isolated from the CLI's persisted threads.",
+      "evidence": [
+        {
+          "resource": "repo://graph.py#L1-L9",
+          "version": "repo-lines-v1:sha256:c2288c02950251fea3e1f233da838cacf260566c8829987fda90da7d7028ca30:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiOTVhM2Y2Y2I2ZjU1ZjBlODk0Yjk2NDY1OGY0Y2JhZGJlMWYzNGY0YzcwODIxZGY0NzhkMGM2Y2VkZWYwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTRmYzM5MDQ5Nzk4YTZmYzZkZGE2ZGEwNzE0ZjlmNzkyYWU2NWJiMWFmMTgwN2M3ZDljNjM5NWViNzJiNDYwOSJ9"
+        },
+        {
+          "resource": "repo://graph.py#L45-L45",
+          "version": "repo-lines-v1:sha256:a470c6dded1d01ec674056e1f15c207aeab75ab09816caba56ef9e62a0b5f3ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ3MGM2ZGRlZDFkMDFlYzY3NDA1NmUxZjE1YzIwN2FlYWI3NWFiMDk4MTZjYWJhNTZlZjllNjJhMGI1ZjNlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ3MGM2ZGRlZDFkMDFlYzY3NDA1NmUxZjE1YzIwN2FlYWI3NWFiMDk4MTZjYWJhNTZlZjllNjJhMGI1ZjNlZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTkwYzlkOWY1ZDRmOGFmNWNmNWI5ZWRmODg3ZmZhNjBmMjc2MmI4NjFmYTBmOTUxNzEyNDk3Zjk5MTQyZDdkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://main.py#L50-L55",
+          "version": "repo-lines-v1:sha256:431e0453ae66133f7b000064f662a89f56f3ff1a2b7d78ade43cd3e4bdc28980:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDJiNWU3Njg1OGQ2MjFjNTI4OWM5MDExZDY3ZjhlYzZlOGFkMTU5YzRhNTQzNTAwNTJmYmQxZDlkYzkzYzMxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2N2ZhMTUxOTMyYmZlNTE4ZjY3ZmEwNTViNzhhYmM5MjU2ZmM2ODlkN2UyZmRlMjkxMjdiNmQ0OWQ3OTEwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQxOTkxMWE4NDkwMDAwZjYzMTVjZmI1N2FmZjMxNzM1NGFiM2I2ZGU0NGU1MmYxMzBjNjRlZDQ1MDY3ODY5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzdkYTYxZDEwNWVmZjdlNTFiNGY2YzU2NWVhNWY5Mjk0MjQ4OGU3MjE3M2UyZWFhMTEwMzliMDY4MTExYjE3MyJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-02T09:22:29.186Z"
+  }
+}
