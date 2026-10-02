@@ -227,6 +227,43 @@ def test_price_without_sectors_asks_for_no_prices():
 
 
 
+def test_a_link_two_searches_return_keeps_both_excerpts(monkeypatch):
+    # 22 Sep run: two searches returned one Reuters URL with different parts of the article, and the
+    # second overwrote the first, so verify removed a true claim as "number(s) 40, 6 not in the source".
+    url = "https://www.reuters.com/saudi-pipeline"
+    excerpts = {"pipeline restarts": "Reaching a rate of 40% of capacity will take a full 6 to 8 weeks.",
+                "Aramco Yanbu": "One cargo was scheduled to load at Yanbu, lowest since September 8."}
+
+    class Tavily:
+        def __init__(self, api_key):
+            pass
+
+        def search(self, query, **kwargs):
+            return {"results": [{"url": url, "title": "Saudi restarts pipeline", "published_date": "2026-09-22",
+                                 "content": excerpts[query]}]}
+
+    claim = Claim(text="Reaching a rate of 40% of capacity will take a full 6 to 8 weeks.", source_url=url,
+                  source_date="2026-09-22")
+
+    class Agent:
+        def __init__(self, tools):
+            self.search = tools[0]
+
+        def invoke(self, inputs, config):
+            for query in excerpts:
+                self.search.invoke({"query": query})
+            return {"structured_response": Finding(topic="Saudi", summary="s.", claims=[claim])}
+
+    monkeypatch.setenv("TAVILY_API_KEY", "test")
+    monkeypatch.setattr(research, "TavilyClient", Tavily)
+    monkeypatch.setattr(research, "read_articles", lambda query, articles: {0: [articles[0].excerpt]})
+    monkeypatch.setattr(research, "create_agent", lambda model, tools, **kwargs: Agent(tools))
+    sources = {}
+    research.research_topic("Saudi pipeline", date(2026, 9, 22), sources)
+    assert all(text in sources[url].excerpt for text in excerpts.values())
+    assert verify.review(claim, sources[url], None) == claim.model_copy(update={"source_date": "2026-09-22"})
+
+
 def test_reader_keeps_only_articles_it_quotes(monkeypatch):
     notes = research.Notes(readings=[research.Reading(article=1, sentences=["Brent rose 3%."]),
                                      research.Reading(article=0, sentences=[]),
