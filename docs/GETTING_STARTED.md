@@ -133,7 +133,7 @@ Never commit `.env` to git. It's already listed in `.gitignore`.
 uv run pytest -q
 ```
 
-You should see `14 passed`.
+You should see `15 passed`.
 
 **First data download.** There is no separate download step. The first run downloads the news it needs, as described in the next section.
 
@@ -182,7 +182,7 @@ What each step does:
 
 **Where things land:**
 
-- `output/<day>-<thread>-<time>.md` is the report.
+- `output/<day>-<thread>-<time>.md` is the report, and the `.html` file with the same name is the same report as a page to open in a browser.
 - `data/events.db` is a database of every news row downloaded and every run's results. Downloads are reused, so a run 15 minutes after another only fetches the newest 15 minutes of news.
 - `data/threads.db` holds your threads, so you can ask follow-ups later.
 

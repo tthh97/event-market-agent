@@ -2,7 +2,7 @@
 
 A LangGraph graph that answers: **which of today's news stories could matter economically, and what do the sources say about them?**
 
-It takes the market stories GDELT saw most widely published in the last 6 hours, has Jev score their economic severity, researches the 3 most severe with Claude and Tavily, keeps only the claims code can tie to a source, shows how the affected US sectors moved, and writes a Markdown report. You can then ask follow-up questions in the same thread. Every step is a node in LangSmith Studio and a span in the LangSmith trace.
+It takes the market stories GDELT saw most widely published in the last 6 hours, has Jev score their economic severity, researches the 3 most severe with Claude and Tavily, keeps only the claims code can tie to a source, shows how the affected US sectors moved, and writes the report as Markdown and as a standalone HTML page. You can then ask follow-up questions in the same thread. Every step is a node in LangSmith Studio and a span in the LangSmith trace.
 
 New to the project? Start with [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md). For the design in detail, see [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md).
 
@@ -41,7 +41,7 @@ gdelt -> triage -> research -> verify -> price -> output
 | research | `research.py` | Claude | One `create_agent` per story with one tool, `search_news` (Tavily, last 7 days only). Returns a summary and claims, each with a source URL and date |
 | verify | `verify.py` | Jev | Code drops claims whose URL the search never returned or whose numbers are not in the article. Jev then checks each claim's meaning and freshness and picks its US sector. Unsure claims are kept and marked unverified |
 | price | `prices.py` | no | Each sector's ETF move over the last closed session, and its difference from SPY (Yahoo Finance) |
-| output | `output.py` | no | Writes `output/<day>-<thread>-<time>.md` and returns it as the reply |
+| output | `output.py` | no | Writes `output/<day>-<thread>-<time>.md` and a matching `.html` page, and returns the Markdown as the reply |
 
 Where the numbers come from: severity from Jev, dates from the search tool (verify overwrites the model's), and every number in a claim must appear in its article's text.
 
@@ -60,7 +60,7 @@ uv run main.py --date 2026-09-30
 |---|---|
 | `data/events.db` | Every market GDELT row fetched, and every run's stories, claims, removed claims and price moves (`db.py`). Rows are only added, never duplicated, so a run 15 minutes after another downloads 1 new file instead of 24 |
 | `data/threads.db` | LangGraph checkpoints (threads) and store. The store keeps each report's verified findings, and research shows the last 7 days of them to the agent as context it may not cite |
-| `output/` | One Markdown report per run |
+| `output/` | One Markdown report and one HTML page per run |
 
 All three are gitignored.
 

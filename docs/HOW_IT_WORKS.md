@@ -4,7 +4,7 @@ Written from the code on branch `simplify-graph` on 2026-10-02. Every claim cite
 
 ## 1. Summary
 
-This project is a command-line program that looks at the last 6 hours of world news and tells you which market-related stories might matter economically and what news articles say about them. It downloads article metadata from GDELT (a free feed that lists news articles every 15 minutes), groups the articles into stories, and ranks them by how many websites published them (`gdelt.py`). An external scoring service called Jev (from Typesafe) rates how economically severe each story is, and the 3 highest are kept (`triage.py`). For each of those 3, a Claude agent searches recent news with Tavily, a smaller Claude Haiku subagent copies out the sentences about each search, and the agent writes short factual claims, each tied to an article URL (`research.py`). Plain code and Jev then remove claims that cannot be tied to their article (`verify.py`), Yahoo Finance prices show how the affected stock sectors moved (`prices.py`), and the result is written as a Markdown file in `output/` (`output.py`). Every GDELT file fetched and every run's results are appended to a SQLite database, `data/events.db` (`db.py`), and each report's findings are remembered for the next week's reports (`research.py:recall`). You can later ask a follow-up question in the same run, which is researched, checked and written up the same way (`graph.py:start`).
+This project is a command-line program that looks at the last 6 hours of world news and tells you which market-related stories might matter economically and what news articles say about them. It downloads article metadata from GDELT (a free feed that lists news articles every 15 minutes), groups the articles into stories, and ranks them by how many websites published them (`gdelt.py`). An external scoring service called Jev (from Typesafe) rates how economically severe each story is, and the 3 highest are kept (`triage.py`). For each of those 3, a Claude agent searches recent news with Tavily, a smaller Claude Haiku subagent copies out the sentences about each search, and the agent writes short factual claims, each tied to an article URL (`research.py`). Plain code and Jev then remove claims that cannot be tied to their article (`verify.py`), Yahoo Finance prices show how the affected stock sectors moved (`prices.py`), and the result is written as a Markdown file and a standalone HTML page in `output/` (`output.py`). Every GDELT file fetched and every run's results are appended to a SQLite database, `data/events.db` (`db.py`), and each report's findings are remembered for the next week's reports (`research.py:recall`). You can later ask a follow-up question in the same run, which is researched, checked and written up the same way (`graph.py:start`).
 
 ## 2. Run flow, step by step
 
@@ -77,11 +77,11 @@ The graph is defined in `graph.py:build` as six nodes in a straight line: `gdelt
 
 ### Step 8. Write outputs (no LLM)
 
-- What happens: builds a Markdown report: header, Jev status (new runs only), verify status, one section per finding with Jev severity and GDELT counts, the kept claims with source links, dates, sector and an "Unverified" flag, a market reaction table, and the list of removed claims. Writes it to `output/<as_of>-<thread_id>-<HHMMSS>.md`. The Markdown is also appended to `messages` as the AI reply.
+- What happens: builds a Markdown report: header, Jev status (new runs only), verify status, one section per finding with Jev severity and GDELT counts, the kept claims with source links, dates, sector and an "Unverified" flag, a market reaction table, and the list of removed claims. Writes it to `output/<as_of>-<thread_id>-<HHMMSS>.md`, and the same content as a standalone HTML page (inline CSS, light and dark, links only for http(s) URLs) next to it with a `.html` suffix. The Markdown is also appended to `messages` as the AI reply.
 - Run log: `output.py:log` appends the run to `data/events.db`: one `run` row (kind `events` or `followup`), the kept `story` rows (new reports only), kept `claim` rows, `rejection` rows and `price_move` rows. Each table has a natural key and uses `ON CONFLICT DO NOTHING`, so nothing is ever overwritten.
 - Memory: on a new report, `research.py:remember` stores each finding that has kept claims in the LangGraph store under `("findings", as_of)`, for later reports to recall (step 5). Findings are stored after verify, so only verified claims are kept.
-- Code: `output.py:output`, `output.py:markdown`, `output.py:log`, `research.py:remember`.
-- In: the whole `State` and the store. Out: `report: str` (the .md path) and one `AIMessage`. Files in `output/`, rows in `data/events.db`, store items in `data/threads.db`.
+- Code: `output.py:output`, `output.py:markdown`, `output.py:html`, `output.py:log`, `research.py:remember`.
+- In: the whole `State` and the store. Out: `report: str` (the .md path) and one `AIMessage`. Files in `output/` (.md and .html), rows in `data/events.db`, store items in `data/threads.db`.
 
 ### Step 9. Follow-up run
 
@@ -169,8 +169,8 @@ The graph itself is fixed. There is no LLM router or supervisor. Claude only cho
 | `research.py` | Claude agent with Tavily search tool and Haiku reader subagent, findings memory | `research`, `research_topic`, `search_news`, `read_articles`, `recall`, `remember`, `published_day` | `graph.py`, `output.py` (imports `remember`) |
 | `verify.py` | Claim checks by code and Jev, sector tagging | `verify`, `review`, `jev_checks`, `numbers` | `graph.py` |
 | `prices.py` | Sector ETF moves vs SPY from Yahoo Finance | `price`, `sector_moves`, `yahoo_close`, `SECTOR_ETFS` | `graph.py`, `output.py` (imports `SECTOR_ETFS`) |
-| `output.py` | Markdown report, reply message, run log, storing findings | `output`, `markdown`, `log` | `graph.py` |
-| `tests/test_nodes.py` | 14 tests for gdelt (including the 15-minute overlap), triage, verify, price, output (including the run log and memory), routing, the reader's filtering and recall. No network, GDELT/Jev/yfinance/reader stubbed, each test uses its own temporary DB. The research agent loop is not tested | - | `uv run pytest` (14 passed on 2026-10-02) |
+| `output.py` | Markdown and HTML report, reply message, run log, storing findings | `output`, `markdown`, `html`, `log` | `graph.py` |
+| `tests/test_nodes.py` | 15 tests for gdelt (including the 15-minute overlap), triage, verify, price, output (including the run log, memory and the HTML page), routing, the reader's filtering and recall. No network, GDELT/Jev/yfinance/reader stubbed, each test uses its own temporary DB. The research agent loop is not tested | - | `uv run pytest` (15 passed on 2026-10-02) |
 | `langgraph.json` | Tells `langgraph dev` where the graph and `.env` are | - | `langgraph dev` |
 | `.github/workflows/openwiki-update.yml` | Daily job that regenerates `openwiki/` docs. Not part of the run | - | GitHub Actions |
 
