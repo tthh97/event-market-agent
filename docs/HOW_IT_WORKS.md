@@ -170,7 +170,7 @@ The graph itself is fixed. There is no LLM router or supervisor. Claude only cho
 | `verify.py` | Claim checks by code and Jev, sector tagging | `verify`, `review`, `jev_checks`, `numbers` | `graph.py` |
 | `prices.py` | Sector ETF moves vs SPY from Yahoo Finance | `price`, `sector_moves`, `yahoo_close`, `SECTOR_ETFS` | `graph.py`, `output.py` (imports `SECTOR_ETFS`) |
 | `output.py` | Markdown and HTML report, reply message, run log, storing findings | `output`, `markdown`, `html`, `log` | `graph.py` |
-| `tests/test_nodes.py` | 14 tests for gdelt (including the 15-minute overlap), triage, verify, price, output (including the run log and memory), routing, the reader's filtering and recall. No network, GDELT/Jev/yfinance/reader stubbed, each test uses its own temporary DB. The research agent loop is not tested | - | `uv run pytest` (14 passed on 2026-10-02) |
+| `tests/test_nodes.py` | 15 tests for gdelt (including the 15-minute overlap), triage, verify, price, output (including the run log, memory and the HTML page), routing, the reader's filtering and recall. No network, GDELT/Jev/yfinance/reader stubbed, each test uses its own temporary DB. The research agent loop is not tested | - | `uv run pytest` (15 passed on 2026-10-02) |
 | `langgraph.json` | Tells `langgraph dev` where the graph and `.env` are | - | `langgraph dev` |
 | `.github/workflows/openwiki-update.yml` | Daily job that regenerates `openwiki/` docs. Not part of the run | - | GitHub Actions |
 

@@ -133,7 +133,7 @@ Never commit `.env` to git. It's already listed in `.gitignore`.
 uv run pytest -q
 ```
 
-You should see `14 passed`.
+You should see `15 passed`.
 
 **First data download.** There is no separate download step. The first run downloads the news it needs, as described in the next section.
 
