@@ -114,7 +114,12 @@ def research_topic(topic, as_of, sources):
                 continue  # published after the as-of day
             articles.append(Source(url=item["url"], title=item.get("title", ""), published=day,
                                    excerpt=item.get("content", "")[:1500]))
-            sources[item["url"]] = articles[-1]
+            known = sources.get(item["url"])
+            if known and articles[-1].excerpt not in known.excerpt:
+                # Searches can return different parts of one article; verify needs every part it saw.
+                sources[item["url"]] = known.model_copy(update={"excerpt": f"{known.excerpt}\n{articles[-1].excerpt}"})
+            elif not known:
+                sources[item["url"]] = articles[-1]
         if not articles:
             return "No articles found."
         try:
