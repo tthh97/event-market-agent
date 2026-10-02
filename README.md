@@ -77,7 +77,7 @@ Serves `event_graph` from `langgraph.json`. Studio adds its own persistence, so 
 - GKG's market themes let some politics and lifestyle stories through. Jev's score in triage filters them, keeping the 3 highest with no minimum.
 - A run on a window with nothing stored downloads about 80 MB of GKG (24 files), about 10-35 seconds.
 - Jev judges severity from the page title and GDELT metadata, not the article, so its score ranks leads and is not a fact.
-- Jev's freshness check can drop standing facts (a company's cost structure, an analyst estimate) as "about an earlier period".
+- Jev's freshness check passes standing facts (a company's revenue mix, an analyst estimate) and removes older events reported as news. On 38 claims the old wording had removed, it removes 6, all older events. Jev's scores vary between runs, so a borderline claim can land either side.
 - The finding's summary is written by the research model and is not checked by verify.
 - price shows observed sector moves, not proof that the news caused them.
 

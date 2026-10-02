@@ -60,7 +60,7 @@ The graph is defined in `graph.py:build` as six nodes in a straight line: `gdelt
   1. Code: if the claim's URL is not one of the `sources` from step 5, remove it.
   2. Code: if any number in the claim is missing from that source's title plus excerpt, remove it. Numbers are compared after stripping thousands separators (`verify.py:numbers`).
   3. Code: replace the claim's `source_date` with the date the tool recorded, so the model's date is never used.
-  4. Jev (one request for all claims, `verify.py:jev_checks`): three questions per claim. `supported`: does the source say this. `current`: is it about the 7 days ending `as_of`. `sector`: which of 11 US sectors (or "none") it most directly affects.
+  4. Jev (one request for all claims, `verify.py:jev_checks`): three questions per claim. `supported`: does the source say this. `current`: is it news from the 7 days ending `as_of`, or a standing fact the source presents as true now (an older event reported as new fails). `sector`: which of 11 US sectors (or "none") it most directly affects.
   5. Thresholds (`verify.py:20`): `supported` or `current` below `DOUBT = 0.4` removes the claim. Below `SURE = 0.7` keeps it but sets `unverified=True`. The sector is set only if Jev's sector confidence is at least `SECTOR_SURE = 0.75` and the answer is not "none".
 - Fallback: without `TYPESAFE_API_KEY`, or if Jev raises, only checks 1-3 run, claims get no sector, and `verify_status` says so. With no sectors, step 7 does nothing.
 - Code: `verify.py:verify`, `verify.py:review`, `verify.py:jev_checks`, `verify.py:numbers`.

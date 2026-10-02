@@ -3,8 +3,8 @@
 
 Code removes a claim whose URL search_news did not return, or whose numbers are not in that article.
 Jev answers three questions per claim in one request: does the article state it (supported), is it
-about the 7 days ending on the as-of day (current), and which sector's costs, prices or demand it
-changes. Below DOUBT on supported or current removes the claim. Below SURE keeps it marked unverified.
+current on the as-of day, meaning news from the 7 days ending then or a standing fact the source presents
+as true now (current), and which sector's costs, prices or demand it changes. Below DOUBT on supported or current removes the claim. Below SURE keeps it marked unverified.
 Without TYPESAFE_API_KEY, or if Jev fails, only the code checks run, and verify_status says so.
 Dates come from the tool that recorded them, never from a model.
 """
@@ -48,7 +48,10 @@ def jev_checks(claims, as_of):
         text = f"`claims[{i}].text`"
         questions |= {
             f"supported{i}": Noul(instructions=f"Does `claims[{i}].source` state what {text} says, with the same meaning?"),
-            f"current{i}": Noul(instructions=f"Is {text} about events in the 7 days ending `as_of`, rather than an earlier period?"),
+            f"current{i}": Noul(instructions=f"Is {text} current as of `as_of`? Answer yes if it reports something that "
+                                             f"happened in the 7 days ending `as_of`, or a standing fact the source presents "
+                                             f"as true now (a figure, structure, exposure, position or estimate). Answer no "
+                                             f"only if it reports an older event or an outdated figure as if it were new."),
             f"sector{i}": Choice(instructions=f"Whose costs, prices or demand does {text} most directly change? "
                                               f"Pick the US stock-market sector from `sectors`.", criteria=SECTORS)}
     with TypeSafeClient(timeout=90) as client:
