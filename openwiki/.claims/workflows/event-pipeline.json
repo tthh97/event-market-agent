@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:c0ebb4561566b63c1e2ae06f53659b352b5f94b00e6917aa1df784cbc2b07650",
+  "claims": [
+    {
+      "id": "claim_9483a1495a9d48d9b1e4355aab829129",
+      "statement": "gdelt.py's top_stories resolves the 6-hour window from GDELT's lastupdate.txt: without an as_of it uses the newest published update, and with an as_of day it uses the earlier of the newest update and that day's 23:45 UTC, raising ValueError if as_of is later than GDELT's newest update.",
+      "evidence": [
+        {
+          "resource": "repo://gdelt.py#L72-L85",
+          "version": "repo-lines-v1:sha256:272cf7a34387f025dcdcc6fbb298d142c8962cb78d2b630a7dfb2b65c5d810a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViYzZkYTA3NWU2NDNiNDA2Y2YzMWM1N2NmODA1NjAwNTg5ODBhMDFhZjUxMzdlM2E5ODA4MTM0OGYxMTRkZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YzBhNTVhNmRkZDk2NTM2ZTJlZGIzMjY1ZDFhZjE1MTlkYjdmNDY4NGI1ZTFkNDFjZTVkZGNiNmI4MGMxOGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1NzU2OTc5N2NkYzU5ZGVkNjJiMDg1YjNhNjA5YWMxNGU1NjEwMTFkZTYzNDQyMGRkMmQxMThhM2Y0NmQ2ZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2MzM5NWE2Zjg0NTllOTQ3ZmM4OWUyNGZlM2QzZmZjMjgzZTE5NjFjYjFkOGRmZjgyMjRiZjg5ZDJmN2Q1YzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4ee948bf2d344a3fafed9920b7d5ac4e",
+      "statement": "gdelt.py deduplicates downloads by querying events.db's gkg_file table for the 24 fifteen-minute timestamps already stored and fetching only the missing ones in parallel via an 8-worker ThreadPoolExecutor.",
+      "evidence": [
+        {
+          "resource": "repo://gdelt.py#L82-L93",
+          "version": "repo-lines-v1:sha256:74706cbbeb71eebbd10fe4512c73927db497c969b6af3319e423977ce9b1eec2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljZTkyMmZjZjczZWJjNjM5YzQ2YzQxODAwZTQzZTA0MWEzNDljZDg1YjM3ZTE0NzNlZjZhZmY4MzE4NmJlOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZDVjMDQzZTg3OTVjOWQ0OTJmNWU2Mzk2NTY3MWNkNzQ4ZDE1NmIzYWM4OWE1NmFiNTNhNzlkNGMzMWNhY2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3NTIzMDJkNjJiODk5ZDljN2I2ZTlhOTY5YjVlMDYyZjU1YTg2MDJkZmUyMTJmOTFjMzc5MWFjNjllOWQxNTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4ZWE5NmEwM2ExZWFjZWNlMTJiYzQxNjU4MjkxZDYwMjZlNDIxNGM0MWIxNDI1ZjQ4YWMxNTJkMjU1YTczNjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5be285558edb4054b03b4d88144eecd4",
+      "statement": "gdelt.py inserts a downloaded file's gkg_row rows and its gkg_file marker in a single database transaction, so a crash mid-insert leaves the file retryable rather than marked fetched-but-empty; a 404 response is recorded as a file with 0 rows.",
+      "evidence": [
+        {
+          "resource": "repo://gdelt.py#L37-L43",
+          "version": "repo-lines-v1:sha256:9cab7e3b3c2115a117a4c96d5121586f2c7f1d59ce15c644f7fee00d739628e0:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2MyYjRmMWExMzQwYjM4YzY4MjNkYmU1OTA3NjUzMWVhN2ViNWJjN2I2MTIxNWVjNDRlNDA5NGYxMGMzZGVhOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2UwYzg0MjBiOGE1NDk3ZWFmZDMyNTU1YTcxODg1OGRiMTg2NjA5Y2YyNWViNWU1Mjg2ODQ0MTY3YTNlOWZiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWI1N2IzOGE1YTg5ZjY5MTY0MjY4MDViZTBhZWY0YjZkZTk4MGEwMjRjYzQzZTkyZGRmMDkxNTlmOTdlMzAyOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOThkYmMzZTZkNjgyYmQ5NTk0YTBkYWUwY2U3MTU4MTJiODVmMzdmZDkyNDEzZGFjOGZhMmNhZjY1YjljODFmNCJ9"
+        },
+        {
+          "resource": "repo://gdelt.py#L86-L93",
+          "version": "repo-lines-v1:sha256:e3173be019c3507542232ffc6f7909c846db45be2fcb11e666a65425cccb6e84:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTYwMDkyNDIzYmMwMDdkMWEzZWIzY2ZiNjc1NzM5MzQ3Mzk3ZTA5MWY0ZDAyODJmYWU4OWNjMjEyYjJiM2UwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmFkNWMwNDNlODc5NWM5ZDQ5MmY1ZTYzOTY1NjcxY2Q3NDhkMTU2YjNhYzg5YTU2YWI1M2E3OWQ0YzMxY2FjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTQ1MmE0NDIzMWM0YmE1MTI0YzkwMjMzMTM1ZDk3Zjk0OTZhMDE3NDI4MGY3NDQzNThmZWY0YjNhM2EzN2I2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzhlYTk2YTAzYTFlYWNlY2UxMmJjNDE2NTgyOTFkNjAyNmU0MjE0YzQxYjE0MjVmNDhhYzE1MmQyNTVhNzM2MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c6db263da84a46e7ae58e0dbfad83adb",
+      "statement": "gdelt.py keeps only GKG rows tagged with at least one of a fixed MARKET_THEMES set and that contain a <PAGE_TITLE> tag; all other rows are discarded before grouping.",
+      "evidence": [
+        {
+          "resource": "repo://gdelt.py#L29-L69",
+          "version": "repo-lines-v1:sha256:bef4491db36dcb6d7b5bc0c205c010837d0fecdde71c64f76bde424f754592fc:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmN2M5ODY2ZWY0Y2ViODI3MDVhNjU1ZjFkMGIwN2ZkNTMwOTcyZmY1NjhlOWNiMTgzMGY3ODZmNjU1MmEwZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMGZjYTk3MTQ4ODQ5OTBkNjk3NjZiZDM5M2I2YjI3ZDlmZmUwMmJkNDQ4MzkwYTUxYTMwNWNiZTA3MGNiOGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MWZjOTg0MWE1ZGJjNzZhNmQxNmRjMTA4Y2I1N2YzMTk3NWMzZjA2MWQwNTUyNGMyYzI0NGYzNmE1NDRlOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjMTNhNDU1ZDhlNDcxNWRhZDE4NTY5NWVmODFjNmNkZmNjMmRjMWU5NTAwYzc1MmQxMGMyZTdhNDZiNTExYjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d72924bf050b4a79af2e2b5e9fbcd7a1",
+      "statement": "gdelt.py groups kept rows by lower-cased page title into Story objects and ranks them by distinct site count first, then article count, then title, keeping the top 30 (TOP_STORIES) as the output of the gdelt node.",
+      "evidence": [
+        {
+          "resource": "repo://gdelt.py#L99-L128",
+          "version": "repo-lines-v1:sha256:6c474a0f4e45cbd34bc51ac51e853f1574c3577d0e61e8fed145d781f538b8ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2OWU4ODFiYzNiMTJkYTU2ODlmNjdjZjY5MmQxMjc5MDJlZGJhNjhjZjk2ODBmMjk2NjBmMzdkZDc0MjdkNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ODczYjQwOGNjMzkyMDM2MjM0YjgxNzFkOWE5OTA2MDUxYTZiZjE2ZTQ5ZGE2YjVlZWNiYzRmZmUyNWI2OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwN2M3YzYzYzdmMGE0YmNiMzMwNTM4NTNmMGM0MjhkN2YwMTRjYWNlM2EwNTBkZGVjN2U3YWMwNGUzYzI1ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d3992f470d3e4297975e4807045c63f8",
+      "statement": "GDELT's MARKET_THEMES tagging is a loose keyword-based filter, not a judgment of economic importance, so the 30 stories gdelt.py ranks routinely include non-economic stories; triage.py's Jev severity score, not the theme filter, is the mechanism that filters for genuine economic relevance.",
+      "evidence": [
+        {
+          "resource": "repo://gdelt.py#L29-L31",
+          "version": "repo-lines-v1:sha256:ad1994221845092146cd4cf27cde25fa158752f9b8ad8bbb014031c31a2882ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Y3Yzk4NjZlZjRjZWI4MjcwNWE2NTVmMWQwYjA3ZmQ1MzA5NzJmZjU2OGU5Y2IxODMwZjc4NmY2NTUyYTBkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGVjNjY2NWY3NzQzYjFlM2I0OTU5YzZlYzdkZTNiYzE5MzQ1NWYyNDAwYTM3YjY4OWQwN2Q4YTA4YWE0NzM1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjUxZmM5ODQxYTVkYmM3NmE2ZDE2ZGMxMDhjYjU3ZjMxOTc1YzNmMDYxZDA1NTI0YzJjMjQ0ZjM2YTU0NGU5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzZhYmU5NWIzNDUxMjlhN2FkY2RjOTdjYzI3ZTgwNDhjMzAxMTkxMjBlMWE3ZjQzZjRmYzAxN2RhY2JkY2UzNSJ9"
+        },
+        {
+          "resource": "repo://triage.py#L1-L9",
+          "version": "repo-lines-v1:sha256:b6141ec1991dce974eda6dbe74acf6c9b197d703670c3bb87bd4bf81b9745925:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDkyYWQ4ZTRmZjM4M2E3OTZlZTg2OTU2YzVjYWYwN2NlMjg0ZmMwMTQxNzkxNzMwNWFhNzhiMDE5ZDBlYTk4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmFmZTQ3ZmIwYmVkZmEwYjQ1ZjBhODM2ODU4ODBiYTYyMjNmNGY2NGQ5NTA4ODZiY2I1ZGRiZmNlNmU5YjM5NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_26963b7c256543e3ba146a3e1efa28b0",
+      "statement": "triage.py's describe() exposes Jev only a story's title and a GDELT-metadata-derived summary (actors, themes, places, article/site counts) and never the article text, since no article body has been fetched at the triage stage.",
+      "evidence": [
+        {
+          "resource": "repo://triage.py#L27-L33",
+          "version": "repo-lines-v1:sha256:9eff0db2dd3dbae92bf6b8f7213e7d831250676e831e3a0395259f22590765b5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmRhZGU4YzlkZDYzZmFhMWRmNDAzOTAzNzhkM2Q0Mzk2MjdkYzYzMDM2YTg5ZjRiNTk2ODY0NjlkODY2OGJjMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc3MTQyODA0N2RhOTgzNjFjMjViOTA3OGJkYjE1MGY1YjYxMmY1ZjdiYjBhNDQyNDY2MGI1ODJjODhjNDliNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDNkMTcxZGU3NTQzMWEwMjFhMGQ5NGZhNzZmYWJmMGQ3MTM5Yzg5OGMxYTBiNDRiNDNjYTYwOTAzZmExYjg0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2E5Nzc5NDlhNmQxNDljNThmMzhmMGVkZDMxODViM2VlYzA0ZDZkYWI4MGJlODdhNTFmOTBlMTUzZjUwZThhMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_585d7b2328d04908b4e780b2ab7431ec",
+      "statement": "triage.py scores all 30 stories' severity (0-3) in a single batched TypeSafeClient.system_one() call rather than one request per story, then sorts by severity and keeps the KEEP=3 highest with no minimum severity threshold.",
+      "evidence": [
+        {
+          "resource": "repo://triage.py#L36-L58",
+          "version": "repo-lines-v1:sha256:f9d0201f96d6849446211780ed843b3f4fd8be44afe01be45c2678d08182eeca:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzOTk4NWUxYmEyZjUzNmY3MTQwMTllYTNkNjkyNDFjYjI4OTQ5NTE2MzA1NjU4Y2ViOTE2YjJiMTQ0NGIxZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwMTcyN2QyMjE4Yzg2NGRhOGJmYmFkZGEyYmI3ZDgyYzQ1MzgxYTBjMWQ0ZTc1NWMwNjNhZjlkZDZhZjVkZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyNTZlNzBmM2M4NTJlMjk5MTY1MjkxMGQ5ZmI0Zjk2NGFmMDQxNmU2NjE4YTM2NjM4NDU1ZWQ5OWRkMjRmZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3MzY0MmFhZWY3MDM4NDE1YWI3YmY4ODg4NTcyYWZiZTc4NjI3YmVhMTY3YjcyYzM1NzgxOGUwZTU0MDc2ZGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_40925574edec4e85ad5f0fef97f5db10",
+      "statement": "triage.py falls back to the 3 most-mentioned stories (state.stories[:KEEP], severity=None) when TYPESAFE_API_KEY is unset or when jev_scores raises any exception, recording which case occurred in jev_status.",
+      "evidence": [
+        {
+          "resource": "repo://triage.py#L47-L58",
+          "version": "repo-lines-v1:sha256:8e4988a3d9625331eab5a455e7a4614e8cfa8f7e306674cd589bcdf80edcb701:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5YjRmN2I2M2U2ZWM5NWFjMTVjOGI3ZTFhNzhhNjE3ODJlZjYyMjljNWNkZDE1NWI4OWMwMzg2NWIyOTBkNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwMTcyN2QyMjE4Yzg2NGRhOGJmYmFkZGEyYmI3ZDgyYzQ1MzgxYTBjMWQ0ZTc1NWMwNjNhZjlkZDZhZjVkZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3ZjVjZjZlMGJkMzE5NGRlMTMyODg4ZTgxMmMyNmQyZDVhNzA3OTc0ZDBlOGU4Y2U2N2VlNDg5YmRhOGMyYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3MzY0MmFhZWY3MDM4NDE1YWI3YmY4ODg4NTcyYWZiZTc4NjI3YmVhMTY3YjcyYzM1NzgxOGUwZTU0MDc2ZGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c25a392eda2046b293aadcd738b93ea7",
+      "statement": "events.db's gkg_file and gkg_row tables, keyed by file timestamp (at) and GDELT's GKGRECORDID respectively, are the durable dedup store that lets a GDELT window overlapping an earlier run's window re-download only the missing files.",
+      "evidence": [
+        {
+          "resource": "repo://db.py#L16-L32",
+          "version": "repo-lines-v1:sha256:c04ef7abd4502384aa9b3fe9bccff0cfadbe4c11f7c8b79531f4b14a43029b11:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhMDY1OGY3MWU5NDg4ZDYxNDZmMmIyOWRlNjFmNjI0ODFjNDFlMDI5YWYxZDViYjQxNGRiNTVkMmY5MjA2ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNThmMjJlYmY4ZDM5NTEyYjY5OGUwZjRhYjQxYWM5MjA2NmI1MWIwMzk0Y2ViMWYyNDFkOTc4MWY4NjE0ZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlM2E0ODY0NTNmNDY3YzllOGUwOWI0MTI4NDg5OGZmZTVkNGQ3YzhiMmRkNTZhMGFkMjY1ZWE5MGE5YTFjN2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjMWIwZWYxOGQ4YmY3MzI3YjM4N2RjZTJhM2Y1NjRjMWFmZTIxY2FmMDAyNjljY2EzOGI5ZDljYjZkMzE1Y2IifQ"
+        },
+        {
+          "resource": "repo://gdelt.py#L82-L96",
+          "version": "repo-lines-v1:sha256:b670646827df785d3a305abf3328051b97f2840b1b7c6fc6b52f2eeb665093f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljZTkyMmZjZjczZWJjNjM5YzQ2YzQxODAwZTQzZTA0MWEzNDljZDg1YjM3ZTE0NzNlZjZhZmY4MzE4NmJlOTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkMTRmNmQ3ZWI1YjU5ZjAwY2ZkYTMzZDc0NjAxNTc4M2UwZDVlNjc0NWIyZWQxZjE1ODU0NWJhMDY0ZjJmOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3NTIzMDJkNjJiODk5ZDljN2I2ZTlhOTY5YjVlMDYyZjU1YTg2MDJkZmUyMTJmOTFjMzc5MWFjNjllOWQxNTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjM2JlYWRkMzZlY2RjNmI3NDBkYTFhMGU3MGE4N2UyNjI5NmE2OGM2NDdkMTg0MTYzYWExYjNhNWQ4N2UwOGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_42c9e52d14e446da8e4bd29e474e1884",
+      "statement": "tests/test_nodes.py verifies the 15-minute overlap dedup behavior end to end: re-running top_stories after advancing the simulated latest update by one step requests only the single new GKG file while events.db's cumulative gkg_file/row counts reflect both runs.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_nodes.py#L102-L112",
+          "version": "repo-lines-v1:sha256:6a04f2454e510de11637084f9269e474e7ea6d1d545908278aa31e85cfc9014f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhNzI1YmZmMWZiMmUyYjhhNjlkNGNjZmRkNDEzOWZhYjA4Y2M4OTRmZWQ2YWE2MjUwZjIzNmNjN2Q3YjEzODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3NTIyNDc5YzBlZDc3ZjI0ZmMyZDJhMjMzZWEyNWI5NDBkOTUyMzJkMmE5MGJlNDcyMWE5OWJmMTkyOTk2N2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhZDc4MzUwZjJhZDEzNWY2NmFiNTk4ZTQxZjk3ZWZkNDZkNWVkZGNkNzc0YzBjYmJmY2MyYzQ4OTExODY2NzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzNDE5MDZhZjE2MzljMGYzYWM4Y2UyZjY1NGE3MmU2MTdlMzAxMzA2YmQ0YjE2Y2VjMWJkMmE1ZTk3YTRhNmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d851ffd6312b47659f4d473981de0d23",
+      "statement": "tests/test_nodes.py verifies triage's two outcomes directly: test_triage_keeps_the_most_severe stubs triage.jev_scores to check the top-3-by-severity selection, and test_triage_without_jev_says_so clears TYPESAFE_API_KEY to check the most-mentioned fallback and its jev_status message.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_nodes.py#L115-L126",
+          "version": "repo-lines-v1:sha256:e44d6660ceb0a3ae53aaa0f7aea3456402d30112b08696e3b02c8f7bd61d9b1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxOGVmNmQ1Yzc2NTk5MTM4YzFkNTdiOWUzZmQ3MTI0NzZhOTBiZTkwNDQyOTg4YjFhMTJmODA5NTYzMjY1ZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhOTg3ZmE0MDI1MTdhNjEwYjExY2EwYjc0NGY0MTZmZmYxODdhM2U0Y2ZlM2NkMWI2Mzg0ZjczODU0MDkyM2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwNjI1MWE5NTJjMTg0NDFhMGZjM2FmZWIxNjc1ZjBkMjU0MjNhMjZiMjg3YTg4Njk2MjQzYTAwNzA1MGI2M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwMGRkMmVhNjBlMzZjMjAzNGRjYWVlMzdjMjU5Yjc4NjNiZDAxZjQ3MmU3NzA4OGFiZTRkMjM4YzAzYzY3YzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c531900ef55b45dba771c5aa8b5e7643",
+      "statement": "The gdelt and triage nodes are the first two steps of the compiled graph (gdelt -> triage -> research -> verify -> price -> output), and gdelt only runs for a fresh thread; a follow-up message in an existing thread routes straight to research instead.",
+      "evidence": [
+        {
+          "resource": "repo://graph.py#L22-L42",
+          "version": "repo-lines-v1:sha256:d6da3ef9730c16817abfc9e4d7eecdb39692d1376483e395f6201d1bc5253979:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MGI5ZThkZTBmNjNhN2RmMDNmNzNiOGZlNGJiZmQ3N2YyMWUzNDQyNmM2OTY1YzFkZmNhMWM5ZjJlNWQzZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlNTdiMWM4Y2FjYzgyZGQwZGRiMGYyZWJkMDg5MTlkNjgzZTdkZTdlZmRlMjZmYzc1NzE3NjUwZDg0M2YxMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwMmZhNDZjZWNiZmUyMzJkNDUzMGNhNDdiNDg2OWNjMjU2MzUyYjIwNDVjNzZkMjQyODllOTk2MjQ5NWRjMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4NzllYWNlMjMyNzI5NzFkYmYzNWJhNDkwMWYwNWM5MTI5MGYwNTFmNGI5MWZiN2Q4MjRkMTgzNTFlYmVmNDcifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-02T09:22:29.186Z"
+  }
+}

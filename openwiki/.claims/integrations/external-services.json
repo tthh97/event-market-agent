@@ -1,0 +1,274 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:59fb51bed695e9a0db84300c6fb03c14d66ec1dca376a430fc17e12c487d91ed",
+  "claims": [
+    {
+      "id": "claim_539fce3b001a440eb7fc5f36e7d62d13",
+      "statement": "gdelt.py downloads the GDELT GKG 2.1 feed with no authentication, fetching lastupdate.txt to find the newest 15-minute update and then up to UPDATES=24 15-minute .gkg.csv.zip files (6 hours), skipping timestamps already recorded in the gkg_file table of data/events.db and fetching the rest 8 at a time via a ThreadPoolExecutor.",
+      "evidence": [
+        {
+          "resource": "repo://gdelt.py#L25-L96",
+          "version": "repo-lines-v1:sha256:50a7fe7dc8da55ee2cf37c8667a0193c121014b2a8a96d3362eb490ce96fdafd:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlMjU5OWYyYzRjYmJiODZiM2RhZjIzZGRmZWFkMDYyMzMzODcxYzQyZDZiZWFmYzc4YmZmODM2ZmI5ODdjNDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkMTRmNmQ3ZWI1YjU5ZjAwY2ZkYTMzZDc0NjAxNTc4M2UwZDVlNjc0NWIyZWQxZjE1ODU0NWJhMDY0ZjJmOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkMTVlMjc5OTFiY2JjNDQyNjJmMTg0NzIxNzlkZDdiYzVhZTkxN2QwNDdjZWI4ZDI4YTZkZWExMDJjYzE4ZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjM2JlYWRkMzZlY2RjNmI3NDBkYTFhMGU3MGE4N2UyNjI5NmE2OGM2NDdkMTg0MTYzYWExYjNhNWQ4N2UwOGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_43e7ee933c444a32898a9f72a5139dfd",
+      "statement": "gdelt.py:http_get treats an HTTP 404 response from GDELT as a skipped update and returns None instead of raising, while any other non-2xx status raises via httpx's raise_for_status and stops the run; a --date later than GDELT's newest update raises ValueError before any download.",
+      "evidence": [
+        {
+          "resource": "repo://gdelt.py#L37-L43",
+          "version": "repo-lines-v1:sha256:9cab7e3b3c2115a117a4c96d5121586f2c7f1d59ce15c644f7fee00d739628e0:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2MyYjRmMWExMzQwYjM4YzY4MjNkYmU1OTA3NjUzMWVhN2ViNWJjN2I2MTIxNWVjNDRlNDA5NGYxMGMzZGVhOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2UwYzg0MjBiOGE1NDk3ZWFmZDMyNTU1YTcxODg1OGRiMTg2NjA5Y2YyNWViNWU1Mjg2ODQ0MTY3YTNlOWZiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWI1N2IzOGE1YTg5ZjY5MTY0MjY4MDViZTBhZWY0YjZkZTk4MGEwMjRjYzQzZTkyZGRmMDkxNTlmOTdlMzAyOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOThkYmMzZTZkNjgyYmQ5NTk0YTBkYWUwY2U3MTU4MTJiODVmMzdmZDkyNDEzZGFjOGZhMmNhZjY1YjljODFmNCJ9"
+        },
+        {
+          "resource": "repo://gdelt.py#L75-L81",
+          "version": "repo-lines-v1:sha256:f1350f355e6a5351d74d79687802132abfb1fab33880cd2f3671a3465d099b65:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDFlOWZjOTMyYTI1N2EzMDE0ZTcwYTBjZTAzZWE1MzgwMzk0OGNkOTY2YzYxZTM0NTIyYzFkZWM2NmFmNWY5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTBjYTFmMjUxMTVkYWJhNTRlNzdhNWFiZjFkODYyMWRhZTg1NzRmNWJlZmYzYmNjYWI5NGJhYWIxYTNjYjUyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzEwOTE0NzBiMDE5Yzc3OWZlNmI2ZDhjYTM3ZTc3N2RlZTY4ZTJkYzhiN2Y0OTVmNzdhZTRlM2U4ZjliOTMxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDYwMWFhMTNlZDAxYzZjYzBiNTc1OGI5NzNmOWYwZjM1NzdhMWU3ZDg2ODg3ZTYzMTQ2ZmI4MGFiZDFiMTM4OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_32591d19cc3d44de855bd6cffdf75535",
+      "statement": "gdelt.py reads fixed GKG 2.1 columns (SITE, URL, THEMES, LOCATIONS, PERSONS, ORGANIZATIONS, EXTRAS) from each tab-separated row, keeping only rows whose THEMES intersect a fixed 13-theme MARKET_THEMES set and that contain a <PAGE_TITLE> extracted from the EXTRAS column and a non-empty GKGRECORDID.",
+      "evidence": [
+        {
+          "resource": "repo://gdelt.py#L29-L69",
+          "version": "repo-lines-v1:sha256:bef4491db36dcb6d7b5bc0c205c010837d0fecdde71c64f76bde424f754592fc:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmN2M5ODY2ZWY0Y2ViODI3MDVhNjU1ZjFkMGIwN2ZkNTMwOTcyZmY1NjhlOWNiMTgzMGY3ODZmNjU1MmEwZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhMGZjYTk3MTQ4ODQ5OTBkNjk3NjZiZDM5M2I2YjI3ZDlmZmUwMmJkNDQ4MzkwYTUxYTMwNWNiZTA3MGNiOGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MWZjOTg0MWE1ZGJjNzZhNmQxNmRjMTA4Y2I1N2YzMTk3NWMzZjA2MWQwNTUyNGMyYzI0NGYzNmE1NDRlOTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjMTNhNDU1ZDhlNDcxNWRhZDE4NTY5NWVmODFjNmNkZmNjMmRjMWU5NTAwYzc1MmQxMGMyZTdhNDZiNTExYjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_74aa4fd10ae944c3a9971835b74bbdad",
+      "statement": "Each downloaded GDELT file's parsed rows and the file's own 'downloaded' marker are written to gkg_file/gkg_row in a single SQLite transaction, so a file is only ever marked stored together with its rows, and a skipped (404) file is recorded with rows=0 so it is not re-requested.",
+      "evidence": [
+        {
+          "resource": "repo://gdelt.py#L88-L96",
+          "version": "repo-lines-v1:sha256:a15a3661bca72744e26fa6f334dddbeaa576801905c9323f0d97497e95efb7bf:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdhMWJhN2MzNjEwYzQ2OTJiODdkMmIwNTA1ZDQ0OWYwYmE3MzI3ZDM5Y2U1ZjYzZTEyMWY4M2UxMTFjMThhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2QxNGY2ZDdlYjViNTlmMDBjZmRhMzNkNzQ2MDE1NzgzZTBkNWU2NzQ1YjJlZDFmMTU4NTQ1YmEwNjRmMmY5MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjM5OWRhOTFmNDE3YTUxZjExMjNiM2ViYWZlMDMwM2Y1MTMxMmEzYzM2NTkwNjBhOTA5OTE1MTM4NDNiYzNmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWMzYmVhZGQzNmVjZGM2Yjc0MGRhMWEwZTcwYTg3ZTI2Mjk2YTY4YzY0N2QxODQxNjNhYTFiM2E1ZDg3ZTA4YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_98172d296e9e4ed1bbce692b5563cf0d",
+      "statement": "Jev (typesafe_sdk.TypeSafeClient) is called exactly twice in the pipeline, once from triage.py to score all 30 candidate stories' severity in a single system_one request, and once from verify.py to check support/currency/sector for all claims across all findings in a single system_one request.",
+      "evidence": [
+        {
+          "resource": "repo://triage.py#L36-L44",
+          "version": "repo-lines-v1:sha256:8f6e9543ac82a284e850d9572175c496d0b1f9dce49438b86f639f526252a446:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDM5OTg1ZTFiYTJmNTM2ZjcxNDAxOWVhM2Q2OTI0MWNiMjg5NDk1MTYzMDU2NThjZWI5MTZiMmIxNDQ0YjFkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJjZjdkZjBmNmYxZTVlZTk5YjYwZmViMzNiNGJkMjYxOGQwZjgzMGE0ZWMyMTZlNDY4ODRiZTZmYjkwNmYyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzI1NmU3MGYzYzg1MmUyOTkxNjUyOTEwZDlmYjRmOTY0YWYwNDE2ZTY2MThhMzY2Mzg0NTVlZDk5ZGQyNGZkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWQ2ZmJjMGU0YTBiYmFlMmIzMTAwYjMzMjI2YmNlNTNjYzE0ZmVlNjQ0MzhkMjc3ZDdlODY1Mjk0MDMzNjM3MiJ9"
+        },
+        {
+          "resource": "repo://verify.py#L42-L57",
+          "version": "repo-lines-v1:sha256:7626951232c1ffd41e8ae79d8699c0fcea82105904f86e7690f7beb1a33eeba4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2MjM2MDE2ZjBmZTVkY2NjNmNkYjBlMTdiYzMzM2JjZjEyNzg5ODljZTQyMmI4MDkyYWYwOWE0MzI1YjM0NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjODQyNjYzMjQ1ZDU5NjZmZmI0ZWNjNjdiNDBjZjg4NGQwMzE4ZTkwOWE5NTZiMTFiZjMyY2FmYWE1ZDMzMTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0ZjljMWNlODNlOGUyNjJkNDczZGFhODcxYjViNzlmYzY5MGY4YzQ0OTJhMGI0YWE3MGI5NzE5NTIyMzYyYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyZDZiZmUyYTgyMjhlZjkyNmZkYmVjNWNmMmM1MmIxZWFkY2MxODdkNDczYWI1ZTRlMTkwYTE0MmZmNmQ2YjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_87a56bf6982544318e4048779d6400ee",
+      "statement": "triage.py keeps exactly KEEP=3 stories with the highest Jev severity score and applies no minimum-score threshold, because on 30 Sep 2026 the highest of 100 candidate stories scored 1.07, meaning a floor at 1.0 or 2.0 would have kept nothing.",
+      "evidence": [
+        {
+          "resource": "repo://triage.py#L1-L9",
+          "version": "repo-lines-v1:sha256:b6141ec1991dce974eda6dbe74acf6c9b197d703670c3bb87bd4bf81b9745925:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDkyYWQ4ZTRmZjM4M2E3OTZlZTg2OTU2YzVjYWYwN2NlMjg0ZmMwMTQxNzkxNzMwNWFhNzhiMDE5ZDBlYTk4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmFmZTQ3ZmIwYmVkZmEwYjQ1ZjBhODM2ODU4ODBiYTYyMjNmNGY2NGQ5NTA4ODZiY2I1ZGRiZmNlNmU5YjM5NSJ9"
+        },
+        {
+          "resource": "repo://triage.py#L47-L59",
+          "version": "repo-lines-v1:sha256:2f25e1f74be8cd39b7f1fa5023fe947cb09a371bf4836182efefcea8ed4d1c78:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5YjRmN2I2M2U2ZWM5NWFjMTVjOGI3ZTFhNzhhNjE3ODJlZjYyMjljNWNkZDE1NWI4OWMwMzg2NWIyOTBkNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3MzY0MmFhZWY3MDM4NDE1YWI3YmY4ODg4NTcyYWZiZTc4NjI3YmVhMTY3YjcyYzM1NzgxOGUwZTU0MDc2ZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3ZjVjZjZlMGJkMzE5NGRlMTMyODg4ZTgxMmMyNmQyZDVhNzA3OTc0ZDBlOGU4Y2U2N2VlNDg5YmRhOGMyYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6706091ec3ab42bd924c3cdd71714178",
+      "statement": "verify.py applies fixed probability thresholds to Jev's per-claim answers: supported or current below DOUBT=0.4 removes the claim, below SURE=0.7 (but at or above DOUBT) keeps it with unverified=True, and a sector is attached to the claim only when Jev's sector-choice confidence is at least SECTOR_SURE=0.75 and the chosen sector is not 'none'.",
+      "evidence": [
+        {
+          "resource": "repo://verify.py#L19-L20",
+          "version": "repo-lines-v1:sha256:8a7d630b7e825751383fd80039c8b96a8fa8b1590a9f2c21542721b0cb3c5b4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDYzMDJiYjI1MTUxMzVlOGEzOWJiZDgwNmY0OTA3MjQ5NjFhY2I1MTVjN2U0YTNlYjBkOGExZWE0YzZhOTRiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQxMDZiMzE2YmE5MDU2NGIwOTViZjlkN2FlMGVjMjJhNzliOWU4MDExNGZlOTUwOWRhNzE5YWY4ZTJkNDllYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmEyMzg2Njc2M2VmNGE2Y2Y2OWZjNzRjZDQ3NWY0ZmI3NDJlNWIxZTAwMmIwODUyMWEwNGM3MWNjZjc3MDhlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTE5NmRiYTAyY2ZiYWZkZDUyYjA1MjZjZDg4NTg3NmE3NTMyYWIzYTc3MjBmNWM2YmY1YTY3YWY4MzZkNzFkYiJ9"
+        },
+        {
+          "resource": "repo://verify.py#L60-L76",
+          "version": "repo-lines-v1:sha256:fc3d1bf34c2e540ef43b1d031b9c3b471288f3edf1054109499d889432284b28:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkZGY0YzdiZGU1Njc1ZDI0MjMxYjFmNjkxMTE1ZDI2NjBmNDZhMTkzYjNkNDg3YzQyNjRiNjZmNjI3OWQxNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlNjY4MWEzOTY3MWE5MDEwNmE5YjMyMWFiOWMwYWI0ZDY1NzUxYjUwZTQyYmM2M2Q2YTc0OTJkM2RiOWQwNDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxYjViM2U3NDhhNzg3ZWI1ZTIzZDllMDFlZGQ2ZmI5MGQ5N2M4ZWJiYzdlNmYzNjdjM2IzOGQxMTViYTUxZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyYmNkNjdlZjdhNTllNThjNWRiNTVkOWE4MjNiODY2NmI1ODNkMzdhYmE3ZjhhZmU0ZWMyNGI0MTc5MzYxMjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4b6a2a1a2fb548418433c69847ac9da8",
+      "statement": "Both Jev call sites degrade gracefully and record the degradation in a status string instead of raising: without TYPESAFE_API_KEY or on an exception, triage.py keeps the first KEEP stories from the GDELT ranking with severity=None and sets jev_status accordingly, and verify.py runs only its code-side URL/number/date checks, assigns no sector to any claim, and sets verify_status accordingly.",
+      "evidence": [
+        {
+          "resource": "repo://triage.py#L47-L59",
+          "version": "repo-lines-v1:sha256:2f25e1f74be8cd39b7f1fa5023fe947cb09a371bf4836182efefcea8ed4d1c78:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5YjRmN2I2M2U2ZWM5NWFjMTVjOGI3ZTFhNzhhNjE3ODJlZjYyMjljNWNkZDE1NWI4OWMwMzg2NWIyOTBkNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3MzY0MmFhZWY3MDM4NDE1YWI3YmY4ODg4NTcyYWZiZTc4NjI3YmVhMTY3YjcyYzM1NzgxOGUwZTU0MDc2ZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3ZjVjZjZlMGJkMzE5NGRlMTMyODg4ZTgxMmMyNmQyZDVhNzA3OTc0ZDBlOGU4Y2U2N2VlNDg5YmRhOGMyYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://verify.py#L79-L97",
+          "version": "repo-lines-v1:sha256:34b704bc03028b7fcc571f52232e10c1d62c71bfd6b84c0bae640ed26870c94b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMGE5ZWEzODhhZTNiMDEwY2M2NWJlYTA1NzgxZTdhMDEyYjIxMjk5MmE4MThkY2E3YTM2OTRmNDc1NDNiY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NTIyMGRiNGYzNzI5NTAxZWJlMTVmMThhNzhlMTkyN2ZjNWEwNTFkNTY0N2ZkNjhlNzYzZDgwZTRlMmQ3ZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkYTViNTAxYTlkMTRhYTdmYzE3YTVhYWQ1OTliMTdiOTBkYTMyZjI0OTZjZTI0NDgzMTczNThhYmU0ZGZkZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3Y2IxYmE5M2YwZGNhMGFkMTI0Zjk2YmU3Y2Q2NTE5ODViNjVkN2YwMzNkZjMyY2NlNTNlYWJkZDc0MDNmMTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_eba09d793c78493bb11b75969ee04d71",
+      "statement": "Because a sector is required before prices.py will fetch any ETF data, a degraded verify.py run (no TYPESAFE_API_KEY or a Jev failure) results in no sectors on any claim, which causes prices.py:price to skip the Yahoo Finance download entirely and return empty moves.",
+      "evidence": [
+        {
+          "resource": "repo://prices.py#L48-L53",
+          "version": "repo-lines-v1:sha256:b51e037378b5ca5b61a7cb0e95d5ae1b933d0061bfe258adf52c1eeb358dadfc:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjA5ZDhiZjViZTdhNjc3Y2Q3YjczODA4YjZkYTgzNTIyZGY3NTlkNzE3ZmRjYjY2N2YyNzU2OTM2OTBkZjkzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWE5NTg1MjgwZGVlY2FkMmVhMDk1NWJiOGFjNjhkNzEwNzg0YjQxYjhkNDA3MjMyMzUxYjUzYThmZGUwZmY1MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNiYzkyNjA5ZTcwZTgxMzMxZjEwMGI5MTIwYWQ2M2Q3NDM0YjgyZjE3NDFkN2E3ODdiYjc1YzA5NjViMDM3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2ZiMjIzZWVmMGEyYmIwMmE5ODRhMGEyOTdjNDgwZTRjZmQyZjRmMDhjYTQ1ZDBlMTU3N2E3MzA1MmIyN2EzMSJ9"
+        },
+        {
+          "resource": "repo://verify.py#L60-L76",
+          "version": "repo-lines-v1:sha256:fc3d1bf34c2e540ef43b1d031b9c3b471288f3edf1054109499d889432284b28:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkZGY0YzdiZGU1Njc1ZDI0MjMxYjFmNjkxMTE1ZDI2NjBmNDZhMTkzYjNkNDg3YzQyNjRiNjZmNjI3OWQxNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlNjY4MWEzOTY3MWE5MDEwNmE5YjMyMWFiOWMwYWI0ZDY1NzUxYjUwZTQyYmM2M2Q2YTc0OTJkM2RiOWQwNDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxYjViM2U3NDhhNzg3ZWI1ZTIzZDllMDFlZGQ2ZmI5MGQ5N2M4ZWJiYzdlNmYzNjdjM2IzOGQxMTViYTUxZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyYmNkNjdlZjdhNTllNThjNWRiNTVkOWE4MjNiODY2NmI1ODNkMzdhYmE3ZjhhZmU0ZWMyNGI0MTc5MzYxMjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_55fa8e698d6849ac8316a392139ffbd1",
+      "statement": "Tavily is called only from inside the search_news tool in research.py, using os.environ['TAVILY_API_KEY'] (not os.getenv), so a missing key raises KeyError on the tool's first invocation and LangChain's default tool-error handling re-raises it, stopping the run inside the research node with no report written; there is no fallback path.",
+      "evidence": [
+        {
+          "resource": "repo://research.py#L100-L117",
+          "version": "repo-lines-v1:sha256:0769dab1cd57b3eb1fec22d11238e4366b50a9fb0d3ba515459ea2b8ba923191:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0MjE1YjAzYmYzMDUwNzJkZjU4YjdkNTAzNzUzNjk4ZjdlZWM0ZTM3ZTg4NTUzYTgwZWQ0ZmM5NWJiNDlkZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiMjM4YzZhZGJhZTQzMTI5OThiMzRhNjVkMTYyZTRkZTdjYTM4ZmY3NGY0NTAyY2E5MDU4MmMzNWVkYjdkZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YmI5M2Q1MTU2N2RkODg1MGVkMDZmMTFiYWFmMTc1YjBjNjIyNjU2MWQzYTcxNWI4NjFjNWI2N2Q1MGM1ZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2Mjk5M2Y2OTY0Mzc1ZTdlNjk4MTliYzQ4YjQzY2RhMDljNDE2MDVkMDAyZTUxYTQ2ZTM2YWZjZjRjZDQ4NmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_631917166bf342b1b26c369806026230",
+      "statement": "Each Tavily search_news call searches topic='news' with max_results=5 over a 7-day window ending on as_of, and a per-topic closure counter enforces a cap of MAX_SEARCHES=3 calls, returning a fixed 'Search limit reached' message instead of calling Tavily beyond that; a full new-report run (3 severe stories) therefore makes at most 9 Tavily calls, and a follow-up run (1 topic) at most 3.",
+      "evidence": [
+        {
+          "resource": "repo://research.py#L28-L30",
+          "version": "repo-lines-v1:sha256:11c91293724f95894d8791aafc856a263f794c4b0bd230aa4ea2389bca47344e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzFiYTRmNzM0ODJiYzVhZGExMzM1MjhkMGExM2ExNmIyMWUxOWU4MWE1ZTYyMTlmZDM1YzUxNDgxOTRlYWY0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdlYTRhNTFjM2ZmYTllZDA0MWU4MTNlMjNjMDNjYjAwOGEwYWYyOTA0ZTU5MmQ3ZDJkNDE1NzNlNDMwM2NkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWE2YzBlZWYzMGRkYjQxMzcxN2NmM2ViZDI5NmZmMTE1YjEyYzdjY2RhMWYzZDUxYzVmZGU0ZDI1YTJkYzgxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWY0MDE1OGVlZTAwYzY4NmFlZmJjMTY2NzFlNmMwNDdkYmViNmU2MmVmY2I0Yjc2NzM3N2Q3MjNiMzk0MWYyZiJ9"
+        },
+        {
+          "resource": "repo://research.py#L96-L125",
+          "version": "repo-lines-v1:sha256:6ad0581830dc630150102bdc1871b794bbf81ed06f91d8201fb7706b3254bf74:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTcyMzhiZWUzY2FmYWY1ZGQ3ZTQ0MTA1OWEwM2QzMjBkYWM2MWQ1MjhhMjQ1Njk2Njc3ZTE5ZjY1YjI5ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhNWM4MWNiZTNmMzFmMzhiZDNlYTUyNWY0NjRkMGMwYzEzNjA2YzNkMGZhZWIyZWI0ZDY1YTU5Mjg5NGM1ZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkMjgyYTIwNTZjNDVkZjFiMjVhZmExYWVjM2FmOGJhOGZhNTliNWZmOGM2ZDY3ZWE0YWM5Y2Y4YTk3YzI1MDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5ZDFjODUyY2Y5ZWQ2OGI4Y2JkYmFiYWU1MmFmMWU2OWFjZTMwMTI4M2QyZDI0NjE4NjEzNDY0YjBjZjkwY2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_12ece2ad4b6d4f30b3ed9fdc1b812aa2",
+      "statement": "research.py:search_news drops Tavily results whose published_date parses to a day after as_of, and records every surviving result as a Source keyed by URL in a sources dict that becomes state.sources, the only set of URLs verify.py will accept as a claim's source_url.",
+      "evidence": [
+        {
+          "resource": "repo://research.py#L110-L117",
+          "version": "repo-lines-v1:sha256:3da543333dbe84a947bee1b5d42599ef151ec3a4869c9c4f51d2f393ee407f46:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU5ODAyOWE0NTUyMWM4M2FiMDk2MjcwZjI2ZjkwYmFhODM1M2RhZjQ5MGM4NzYzOTEyNTkzMjVjY2VhYTdiOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmIyMzhjNmFkYmFlNDMxMjk5OGIzNGE2NWQxNjJlNGRlN2NhMzhmZjc0ZjQ1MDJjYTkwNTgyYzM1ZWRiN2RmNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjllYWQ2MjViZGQxMzhhMTAyOTUxNjY4YzFhZDE0OWQwZTdjMjg0YWFlZDhmY2ZlMDE2YTA1OGQ2MzYyYTU4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDYyOTkzZjY5NjQzNzVlN2U2OTgxOWJjNDhiNDNjZGEwOWM0MTYwNWQwMDJlNTFhNDZlMzZhZmNmNGNkNDg2YSJ9"
+        },
+        {
+          "resource": "repo://research.py#L59-L67",
+          "version": "repo-lines-v1:sha256:f1ad33f396a46b237283a9236cacc02e4ae3008429a33e0d07849e72f867e26f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdjYTNmYjczMGU4OTQ1ZGQ2YTZmYjAwZmNkOWIwODlmNDRjYmI5NTIyNzc1Y2ExYWEzNDk5NjFhZGFhYTIwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDBiNmFlMGYwNjAyNmY4YzI1ZTZjODdjOTkyMmE4Y2Q5NDZiMmRkNzQ2MDYyYWM3NzAyMzY5ODA5NTU0NmEyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjk1ZGQzZjFhN2NkYmYyNGU5ODUwM2YyNDY1N2FkZDAwNTkzMWQ2YmRiOWY5NmYzNjkyMWI4ZGU2YzJmNDM4YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDZjM2M4NDFkOGIwOTYxODEzYjIyMWQyODg3MmM4NzRhNTRmZDczOTRjMTI5MDViNmY3NDlhYzc5M2U4ODFiYSJ9"
+        },
+        {
+          "resource": "repo://verify.py#L60-L64",
+          "version": "repo-lines-v1:sha256:4541dd9f6caf46494a078eec771a14efb04fd348356f9831cf491cdbfd40f2fb:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmRkZjRjN2JkZTU2NzVkMjQyMzFiMWY2OTExMTVkMjY2MGY0NmExOTNiM2Q0ODdjNDI2NGI2NmY2Mjc5ZDE1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRkNmExYTUwZTY1ZmUxYWY0OTA4MDlmYzAwZDBhZjg0MmNjMzUwZjlmN2NlMGJiOGI5ODEwOWIzMTk4MzkyOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDFiNWIzZTc0OGE3ODdlYjVlMjNkOWUwMWVkZDZmYjkwZDk3YzhlYmJjN2U2ZjM2N2MzYjM4ZDExNWJhNTFlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGEyMjE0NjA1ZjhhMWY5YTVkMmUzZmRmZTZlYjI1NjNlOWU0MTllZTMyMjE4MjdhZmNiMWViOWJlZmI3NGFkMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_91a38084be3047b78fb22f5ca9888737",
+      "statement": "The research agent model is selected by the RESEARCH_MODEL env var (default anthropic:claude-sonnet-5-5), constructed once at import time via init_chat_model with timeout=120 and max_tokens=8000, and a fresh create_agent instance with response_format=Finding is built per topic (up to 3 per new report, 1 per follow-up).",
+      "evidence": [
+        {
+          "resource": "repo://research.py#L127-L130",
+          "version": "repo-lines-v1:sha256:6a0035b72c645c7b764fd2864dc1f6d74042c2787151e9517e298abb2a5634bc:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzljOTM2NTc0YzQ3MDZkOTkyZTRkZThjZGMzYjM2NzRkNzMwZmZkODE5ZjgyMmI0ZWQ1YzY4NmViZTE4ZTViNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGNiZmM5MThhZmJmNDcwMDFlMGFmMTdjOGVmNTIwOWJmNDI5NDE0NTYyNzIyMWE1ZGJkY2U2MjJiMmU1MWQ2OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2ZhNDYxYjQzYTNhZWQyMzRhYTA4MzdmMmNlNWYzODg5MDQxNjM0NmZiMDUwNmM1ZTAxZTA4NmZiN2JiNDUyNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGJkMjdkY2VkMzNlZDQ2MmZkNTc3ZTVmZGMwMzlkNTg4YTkwZTc0MjA5NWFiMmQ1Y2M3NTAwYWY2MGY5OGUyOSJ9"
+        },
+        {
+          "resource": "repo://research.py#L27-L27",
+          "version": "repo-lines-v1:sha256:4301a44f5a037f82852a6208127511c28300334e7e8f80a75e90ce6fc1c734da:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDMwMWE0NGY1YTAzN2Y4Mjg1MmE2MjA4MTI3NTExYzI4MzAwMzM0ZTdlOGY4MGE3NWU5MGNlNmZjMWM3MzRkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDMwMWE0NGY1YTAzN2Y4Mjg1MmE2MjA4MTI3NTExYzI4MzAwMzM0ZTdlOGY4MGE3NWU5MGNlNmZjMWM3MzRkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzkxZmM3YzNmMzJkNDFkNDBkNDg0NzM1OTllNTYzNzYzZTAxNTRhYWU5MmE5N2YzMjVhNmM1MDMxN2I3Mjc2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTFjOTEyOTM3MjRmOTU4OTRkODc5MWFhZmM4NTZhMjYzZjc5NGM0YjBiZDIzMGFhNGVhMjM4OWJjYTQ3MzQ0ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2c83aba65af3406580b092de1f5c3b18",
+      "statement": "The reader subagent uses a fixed, non-configurable model anthropic:claude-haiku-4-5-20251001 (no env var), constructed once at import with timeout=60 and max_tokens=4000, invoked once per search_news call that returned at least one article (up to 9 per new-report run), and if it raises, search_news falls back to showing the full 1500-character excerpts instead of curated quotes.",
+      "evidence": [
+        {
+          "resource": "repo://research.py#L118-L125",
+          "version": "repo-lines-v1:sha256:fb2e7728cef2c59bb5ae1669bd4e547111cc814e0eec7298c50ad4b2502e13ff:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFhZGVlMWI5MzllMzhjYWI5NjAxZmMxY2VhODI4NjdlMTkzNjU3ZjZmMDM5YTkxMDI2NmNmYzIwOGZlMTYwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmE1YzgxY2JlM2YzMWYzOGJkM2VhNTI1ZjQ2NGQwYzBjMTM2MDZjM2QwZmFlYjJlYjRkNjVhNTkyODk0YzVmMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjQ0MDY5ZGI2ZTdhNjc4ZmUwYzY1NzliMGY1NWFkZTI4MGRjNjRlMDY0ZjQzY2I1MGExMjZjODc3MmY3ZDE5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDlkMWM4NTJjZjllZDY4YjhjYmRiYWJhZTUyYWYxZTY5YWNlMzAxMjgzZDJkMjQ2MTg2MTM0NjRiMGNmOTBjYyJ9"
+        },
+        {
+          "resource": "repo://research.py#L30-L30",
+          "version": "repo-lines-v1:sha256:67ea4a51c3ffa9ed041e813e23c03cb008a0af2904e592d7d2d41573e4303cd2:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdlYTRhNTFjM2ZmYTllZDA0MWU4MTNlMjNjMDNjYjAwOGEwYWYyOTA0ZTU5MmQ3ZDJkNDE1NzNlNDMwM2NkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdlYTRhNTFjM2ZmYTllZDA0MWU4MTNlMjNjMDNjYjAwOGEwYWYyOTA0ZTU5MmQ3ZDJkNDE1NzNlNDMwM2NkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTQ0YmYwMDBlNGFjMjM2OTkwMjhlNjQwOWZkOWVhZmNhZjhjYTg1ZTA5YTY4NmU5ZTJmZmM4ZjJmN2RlMjljMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWY0MDE1OGVlZTAwYzY4NmFlZmJjMTY2NzFlNmMwNDdkYmViNmU2MmVmY2I0Yjc2NzM3N2Q3MjNiMzk0MWYyZiJ9"
+        },
+        {
+          "resource": "repo://research.py#L70-L76",
+          "version": "repo-lines-v1:sha256:1940eab5c5b1bd8a9d9764369e22deda3dc32f4bf52b3b7f4db821917a8c8468:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGM5MGI1NWU0ZjUwYzkxZmM4ZWZjNmM0ZGY4Njg3MDFjZGE5YTNiNWUzYWYxZjEzOGFjZjRlMDg5MmExOTNlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYThjMTkyNDRlNjAwNjdlYTlmNjRkODE2MWExNGE1NjhjYzZkYzE1ZDY1Yzk5MGRiZTFmYWJhNGQ1ZDU4M2Q5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTkxYTljZWI2YWVlMWRkYzJhNjlmMDQ5ZmRlNTUzYTUyODgyMjU4NTFlZmY3NmI0MTdhOGJhMTE0NjY2M2Q3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmQ1ZjkzZjVhOThiMTJiMmI4NzZjNzc1MzkwNmVmOWFiNzJlYWE2ODVlZjdhNGY0NWI1OGU5YmIyMjAzMDI1MiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a22b92a916364842bac0630bca607947",
+      "statement": "Both Claude models (research agent and Haiku reader) are constructed once at module import via init_chat_model, so ANTHROPIC_API_KEY misconfiguration does not fail the process at startup; without a valid key the run completes gdelt and triage (persisted to data/threads.db) and fails at the first Claude completion call inside research, producing no report.",
+      "evidence": [
+        {
+          "resource": "repo://docs/HOW_IT_WORKS.md#L191-L192",
+          "version": "repo-lines-v1:sha256:ddd1dfff2b5d5239b0dccc8ae6d170bbb24c085ded25bda6b713fda3ef29672d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODMyMDkzNWVlYjkxYjhlNWQwY2QzNmJmYTJjN2EzNjRmYzAxYTcwNGRmYjA2NmRmODhiZWViOWFkMjc1MzYxYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQyM2Y0M2VmZTU3Y2QzMWYyOTA1YTg3MWNhNDIzYjg5N2I5ZmZlYzYxMDkzMzQzZTBiNTJjMTQ5N2JlMWIxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2MzMDI3YTAyZjBlMDYwMGEwNWJiYjY3OTIyMDAxMGQ1YmRiYWE2ZjdiYjY0ZWZjOGZkMmI3NmYwNWJlOTAxNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTExYmM3M2YyZmY1YmExMTMxZTUzNzYwZmRjNDdhMzNjMGQ1NDNiYTk3MjdiMDVlMTkyZjU5Y2JjYmJhYTZjOSJ9"
+        },
+        {
+          "resource": "repo://research.py#L27-L30",
+          "version": "repo-lines-v1:sha256:7f29402809a32ba2d4caf67d6af074f0572c2fcda3037196941692c560bc9d42:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDMwMWE0NGY1YTAzN2Y4Mjg1MmE2MjA4MTI3NTExYzI4MzAwMzM0ZTdlOGY4MGE3NWU5MGNlNmZjMWM3MzRkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjdlYTRhNTFjM2ZmYTllZDA0MWU4MTNlMjNjMDNjYjAwOGEwYWYyOTA0ZTU5MmQ3ZDJkNDE1NzNlNDMwM2NkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzkxZmM3YzNmMzJkNDFkNDBkNDg0NzM1OTllNTYzNzYzZTAxNTRhYWU5MmE5N2YzMjVhNmM1MDMxN2I3Mjc2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWY0MDE1OGVlZTAwYzY4NmFlZmJjMTY2NzFlNmMwNDdkYmViNmU2MmVmY2I0Yjc2NzM3N2Q3MjNiMzk0MWYyZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_47281e1e97254b219abf0e481d49738c",
+      "statement": "prices.py uses yfinance with no authentication, mapping each sector found on kept claims to its SPDR ETF via SECTOR_ETFS plus SPY as benchmark, fetching adjusted daily closes for the 10 days before as_of up to an exclusive end of min(as_of+1 day, today) so today's possibly-open session is excluded, and comparing the last two available closes to compute percent move and percentage-point difference versus SPY.",
+      "evidence": [
+        {
+          "resource": "repo://prices.py#L16-L45",
+          "version": "repo-lines-v1:sha256:4bd68d396703c6bc61b3060288550e5fd6bbb98272e4ddce75d8d623a526740b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2MDhiNzliNDQ1YWFmNWE3Y2Q2MmRmMTIxNDdiNGU4Mjg4MzUxZjI1ZTA0MjEzYjUzYTY5MDQ3ZTQwY2ExNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2MmFjMDNlMWY0ODVkOWY3MWM2MTBlYWY3OTFhNWE0NTVhOWNkYWEyNGMwM2Y4ZTU2MTk1NGY4YTNhMDhkY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhMjM4NjY3NjNlZjRhNmNmNjlmYzc0Y2Q0NzVmNGZiNzQyZTViMWUwMDJiMDg1MjFhMDRjNzFjY2Y3NzA4ZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0NTM0NDEzMTdjZDk5ZWU2ZDIxNTIwMTkyMzMzMmQ1NzI3MDA3MWUyNTdiOTYzY2FhYTE3MWIyYzE0NDU4YmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6a094d18ed684fcca5891deb2ba6d87b",
+      "statement": "prices.py:sector_moves wraps the yfinance download in try/except, returning an empty moves dict with an explanatory 'Prices unavailable' price_window string on any download exception or when fewer than 2 closed sessions remain after dropping all-NaN rows or SPY is missing from the result.",
+      "evidence": [
+        {
+          "resource": "repo://prices.py#L29-L45",
+          "version": "repo-lines-v1:sha256:612174d0a1a9b8fd91dc5c7efa5caeedb751c9c834c766d00bd3f444255c2457:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3M2QzNTkxYWQxYmNjNTJhYzNhMzRhYTgyM2I0NzllMjVkMGY3MTM2MDgxMDE0YjZmZWIxNjI5NDkyZDUxNmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2MmFjMDNlMWY0ODVkOWY3MWM2MTBlYWY3OTFhNWE0NTVhOWNkYWEyNGMwM2Y4ZTU2MTk1NGY4YTNhMDhkY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyMDcxZTllNzhkYjg2YjllMzQ3YjQ3OGM4MzVlYzU1NDY0NzI0OGY2MzFkMzZlNDZiMGIyNzY3YTQ4M2QyOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0NTM0NDEzMTdjZDk5ZWU2ZDIxNTIwMTkyMzMzMmQ1NzI3MDA3MWUyNTdiOTYzY2FhYTE3MWIyYzE0NDU4YmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_66ad3cc5b5c847b8a3a16a44da10f006",
+      "statement": "LangSmith tracing is enabled purely via LANGSMITH_TRACING/LANGSMITH_API_KEY/LANGSMITH_PROJECT environment variables with no direct langsmith SDK calls in repo code; one main.py invocation produces one trace named 'Event graph', each of the six graph nodes is a child run, and inside research each topic's agent run and its search_news tool calls nest further, with the Haiku reader appearing as a 'reader: <query>' child run inside each search_news call.",
+      "evidence": [
+        {
+          "resource": "repo://docs/HOW_IT_WORKS.md#L151-L157",
+          "version": "repo-lines-v1:sha256:c4b63aeda2b79266119ccff8519a7c3046ec9c854aff2318a8167ad1c58a5ca7:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWZkOWMzYjE5N2JiZDg0NDc4ODUwNDM4NmRhM2FjODFiZjUyOGY5NjBiOGRiYjI5NzRkMGM5ZmVlYzlhNmU2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTM0YTBiZmY4OTA5Y2RmY2JjMzBhNDRlMjkzNzFjNjgyZTc2OWNjZjRkMzMwYjUxMGM1OTVlYTQ3MzRiMjAxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTU1ODNiZTcyYmI3YzQ3YjFlMjAzN2UwYzlkNmZlODIxMzJiYTJlYmViYzhiZThiMWM1ZWYxY2ZmNzYwZmJlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTY5NzA4YzAxMjkwZmQ0NDM0NjUwMWFkMTg1MDc0YTNkY2QzNGE5OGY0MDllOTBiYzdkYmVmZjMwOGVlMjMxMCJ9"
+        },
+        {
+          "resource": "repo://research.py#L129-L129",
+          "version": "repo-lines-v1:sha256:dc3f089da26ad6f99461fb721e2e213c93bd1c085c231f011bad54063c49ffbd:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMzZjA4OWRhMjZhZDZmOTk0NjFmYjcyMWUyZTIxM2M5M2JkMWMwODVjMjMxZjAxMWJhZDU0MDYzYzQ5ZmZiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMzZjA4OWRhMjZhZDZmOTk0NjFmYjcyMWUyZTIxM2M5M2JkMWMwODVjMjMxZjAxMWJhZDU0MDYzYzQ5ZmZiZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDlkMWM4NTJjZjllZDY4YjhjYmRiYWJhZTUyYWYxZTY5YWNlMzAxMjgzZDJkMjQ2MTg2MTM0NjRiMGNmOTBjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGVjNGVjNmJiOTg3ZjQzYjVhNTMzZDM2YjJmNmRlOTYwM2Y2ZTkxY2E3ZjU4NDVkMzkyMGI2NjY5ZDA5MDdlNyJ9"
+        },
+        {
+          "resource": "repo://research.py#L74-L75",
+          "version": "repo-lines-v1:sha256:0a3c4c4149ddfbf873127409f26a4d7c55162f3fd0dedee58dab2bbf984477dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGU5ZWMyYmExM2Y1ODZhMzQxZDcwNTA2M2UwNjQ2ZmJlN2Q0NTYxOWVmMzdkZTgzZjFiOTMxYjM1NmQ0YjM2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDRmNjU2NjM1Y2U3MDJkOWU0NTRhMDg3YWFjZTIxNWVlZDc1ZTBjNjc3OTcyMGJkYjJkZDQzNWI4NDkwYWZlMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDExM2E3ZWYyYmEwODliOWEwZjE0MTJiNGEwNjA1ZTA1NWFlYWUxN2M3YTg4Yzc3YWI3OTMxMDY4Yzg5NmVjMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTViZjY1ZTY2NWU0ODdhMzNjNjg1MjVkNmYzZTIyNjFjNWNmMGYxYTQ5MzgxMDA0ZGFjNzNiYWRhNGYxNDc1ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_43f170c6987d4eb6beac0455878648f8",
+      "statement": "Jev, the raw Tavily HTTP call, and yfinance are not traced as separate LLM/HTTP runs in LangSmith: Jev and yfinance appear only implicitly inside their enclosing node's run span, and the Tavily call is visible only as the search_news tool-call run.",
+      "evidence": [
+        {
+          "resource": "repo://docs/HOW_IT_WORKS.md#L155-L155",
+          "version": "repo-lines-v1:sha256:5c0b18ef014c958857fa7f055040070a75d54c5fb857b4bc0d2f9934177c640a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWMwYjE4ZWYwMTRjOTU4ODU3ZmE3ZjA1NTA0MDA3MGE3NWQ1NGM1ZmI4NTdiNGJjMGQyZjk5MzQxNzdjNjQwYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWMwYjE4ZWYwMTRjOTU4ODU3ZmE3ZjA1NTA0MDA3MGE3NWQ1NGM1ZmI4NTdiNGJjMGQyZjk5MzQxNzdjNjQwYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTJhMjc0Zjg0YWJkMjIwZmY2ZjUzNzg0YTRmODFhMjhmYWE4ZTg2ZjFjYzg3MDRiNTA5OWFjMTcxMWQ0OTI2YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWU5MThlYmE1ZDg4ZDQ1M2IwMjFiNWM5NjY2NDM0N2U3ODQzODQ4ZGRlNzM3MDBiZGVjODM4MWM1ODhiZWQwYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b51988b2a7ef4f2fa11d7bce7e5570b5",
+      "statement": "uv run langgraph dev serves graph.py:graph compiled without the SQLite checkpointer/store that main.py supplies, so Studio's LangSmith-traced threads and its cross-report findings memory are separate from data/threads.db and not exercised through the CLI's persistence path.",
+      "evidence": [
+        {
+          "resource": "repo://docs/HOW_IT_WORKS.md#L157-L157",
+          "version": "repo-lines-v1:sha256:134a0bff8909cdfcbc30a44e29371c682e769ccf4d330b510c595ea4734b2013:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTM0YTBiZmY4OTA5Y2RmY2JjMzBhNDRlMjkzNzFjNjgyZTc2OWNjZjRkMzMwYjUxMGM1OTVlYTQ3MzRiMjAxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTM0YTBiZmY4OTA5Y2RmY2JjMzBhNDRlMjkzNzFjNjgyZTc2OWNjZjRkMzMwYjUxMGM1OTVlYTQ3MzRiMjAxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTA0Mzc2NDVkNTBkYTVlZjU0MjNiZWJmMjQyYzg1MTFjNTcxNTM2MzE4YmRiY2Q2MWNjNzMzMWRiNDAwMjk1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTY5NzA4YzAxMjkwZmQ0NDM0NjUwMWFkMTg1MDc0YTNkY2QzNGE5OGY0MDllOTBiYzdkYmVmZjMwOGVlMjMxMCJ9"
+        },
+        {
+          "resource": "repo://research.py#L79-L93",
+          "version": "repo-lines-v1:sha256:0374b18b27be274a64193c382eb0129f4cb78da69d6d852cbaf32996eb1944e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjZGVhNmIzOWUyNWUzZTIzYTg5NTcxODBiMGU1ODQ2ODVkOWRjMjI5ZmUyYThjNzJlMWNkOWZlNGFlOGUxZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyYzQ4MTNjMDYyMThkNjdlNzNmNDFjMjM3ZmYzMzQzNjY5MzE1NmJkNjk3NDA5ZTBmZmVkNzNkYzczNGU5MDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1YmY2NWU2NjVlNDg3YTMzYzY4NTI1ZDZmM2UyMjYxYzVjZjBmMWE0OTM4MTAwNGRhYzczYmFkYTRmMTQ3NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlNTVlYWRmYWY2MmVlMzU3MzUyNjFmMDNmMWYwMDU1MDE0Yjc5MjA3ZDdiYmZhYzgxZjAxOTM2MzExZmM0NWIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-02T09:22:29.186Z"
+  }
+}

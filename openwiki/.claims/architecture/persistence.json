@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:f04ad090c8666fc941e40dca350a403f1ae59d738e564ba19cc04648f540e828",
+  "claims": [
+    {
+      "id": "claim_fd180a5d4a6b4fed88b6ee2816a5019c",
+      "statement": "data/events.db (db.py) is an append-only SQLite database distinct from data/threads.db: all inserts use INSERT ... ON CONFLICT DO NOTHING against natural keys, and db.connect() creates the schema with CREATE TABLE IF NOT EXISTS if missing.",
+      "evidence": [
+        {
+          "resource": "repo://db.py#L1-L32",
+          "version": "repo-lines-v1:sha256:8679681c95246253c1f80973da5815f650f996be237b5d66b77f8446bdc4d087:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMzYzMjUxMDJiNDE2YzUxMzViYjk2Nzg2OTVlM2ZlOTI1MWY4YWUxMGE3NmJiYzhmODliY2YyNmZmNDAzNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNThmMjJlYmY4ZDM5NTEyYjY5OGUwZjRhYjQxYWM5MjA2NmI1MWIwMzk0Y2ViMWYyNDFkOTc4MWY4NjE0ZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjMWIwZWYxOGQ4YmY3MzI3YjM4N2RjZTJhM2Y1NjRjMWFmZTIxY2FmMDAyNjljY2EzOGI5ZDljYjZkMzE1Y2IifQ"
+        },
+        {
+          "resource": "repo://db.py#L79-L85",
+          "version": "repo-lines-v1:sha256:068a6f58e27f43b7f901156a7a23988924bae387ca04ca102c6d50302edb5a6f:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzJmNWYxY2ZiMzNkZDBkZmMwNDc0MzAwZWZiN2FhYWUzM2NhZDZlOTAxZWQ3MjczMzFkNTQ4NWQ3YzUxNTZmZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzYzYjExZDAzOGVjODJkOGRjOWIyYjU3NzU2NGViMjk2NGE1ZDI2MDY5NGNlZWU0NDNiMzY1NTVhOTFiM2Q0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzhhZTYwYTA5YTc4NGI0N2VhMDg1MzE2YmZmOTJjNjgwMTFkZDY3MGQ4OWYyOGRhZjVkYTliYjZhZTQxYmM0MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8732f06ab77444e98947ca29ccb41a97",
+      "statement": "gkg_file is keyed by the GDELT GKG file's own UTC timestamp (at) and records how many market rows it contained (0 when GDELT returned 404/skipped); gkg_row is keyed by GDELT's own GKGRECORDID so the same article is never stored twice.",
+      "evidence": [
+        {
+          "resource": "repo://db.py#L17-L32",
+          "version": "repo-lines-v1:sha256:31c3288404611e4fb4b18a4b4bc15ad49be9169c83ad6e29264b6b94a8b84e47:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxODEwZGM4YjU3YWI2ZDAxNDAwMjZhMjQ2ZWJhM2M3NGMwOTdmMDM4MTlmMGQ4ZGNmZTQzNTVjNWI5NjE2ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNThmMjJlYmY4ZDM5NTEyYjY5OGUwZjRhYjQxYWM5MjA2NmI1MWIwMzk0Y2ViMWYyNDFkOTc4MWY4NjE0ZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1ZDdmZWFkODliOTEzODY3MTM0YmRmOGE4ODQwOWJmZWRiMmM0NTgxNTcyYjdlZjAyZTg3ODM3ZDM0OTJlZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjMWIwZWYxOGQ4YmY3MzI3YjM4N2RjZTJhM2Y1NjRjMWFmZTIxY2FmMDAyNjljY2EzOGI5ZDljYjZkMzE1Y2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4b4a9d4d9306406bb445659237470443",
+      "statement": "gdelt.py's market_rows() writes gkg_file/gkg_row: for each 15-minute timestamp in the requested window it checks which files are already stored, downloads only the missing ones in parallel, and inserts a file's rows together with its gkg_file marker in a single transaction, so overlapping windows download only new files and a crash mid-insert causes the file to be retried rather than marked fetched-but-empty.",
+      "evidence": [
+        {
+          "resource": "repo://gdelt.py#L72-L96",
+          "version": "repo-lines-v1:sha256:1b9c05a6797ceade054cbe01af591166479f245c6ad7279b72a5817de7623db5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViYzZkYTA3NWU2NDNiNDA2Y2YzMWM1N2NmODA1NjAwNTg5ODBhMDFhZjUxMzdlM2E5ODA4MTM0OGYxMTRkZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkMTRmNmQ3ZWI1YjU5ZjAwY2ZkYTMzZDc0NjAxNTc4M2UwZDVlNjc0NWIyZWQxZjE1ODU0NWJhMDY0ZjJmOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1NzU2OTc5N2NkYzU5ZGVkNjJiMDg1YjNhNjA5YWMxNGU1NjEwMTFkZTYzNDQyMGRkMmQxMThhM2Y0NmQ2ZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjM2JlYWRkMzZlY2RjNmI3NDBkYTFhMGU3MGE4N2UyNjI5NmE2OGM2NDdkMTg0MTYzYWExYjNhNWQ4N2UwOGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_edf7992817724e3c9154726b267a7ced",
+      "statement": "output.py's log() is the sole writer of the run, story, claim, rejection, and price_move tables in events.db, appending one row per run (and per kept story/claim/rejection/price-move) after every graph run, keyed by run_id with ON CONFLICT DO NOTHING making the log idempotent.",
+      "evidence": [
+        {
+          "resource": "repo://db.py#L34-L75",
+          "version": "repo-lines-v1:sha256:94ccc1aed2a31880159bc99d16ba030d96c5eea7ab9b858a3207bdda435231cc:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZmQzYTVlNThkODA4ZTJlYjdjMjFiNzk3NzUwYjNiZDk4ZGM5YWEzZWQ1MDU0ZmIzM2VhN2E5ODlmYmI3NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTY3ZWMxZWQzODM2ZjhlYjE3YWZmMTcyYjViZmVmN2RlNjA0ODVhNDM5YzZjYTExYzU5MWUxNzU1NzM5YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMWY1NjU3Y2Y5MzhjMWFiNzBkODEwOGRmNzU4MmM3YmRmMmRjN2QzODBkZDNjZjU0YTA0MjMxNGUzNjk4MWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4YWU2MGEwOWE3ODRiNDdlYTA4NTMxNmJmZjkyYzY4MDExZGQ2NzBkODlmMjhkYWY1ZGE5YmI2YWU0MWJjNDIifQ"
+        },
+        {
+          "resource": "repo://output.py#L54-L71",
+          "version": "repo-lines-v1:sha256:12c0a2b8047961c4499200d867666a61f176a34564bfb2641fda4e75dbe4a570:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMDNhMTJlZDhiZDA3NTMzOWQ2ZmEyNTczNmJiNjc3NmQ2MjU2NjM1OGU4M2E1YzI2MGMzZDRmMDlmOWM3MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0NDI4ZDQxNmRhYzhhMjU0OTVjNWY4YjhiNDU1ZTE0ZjRmMGQwM2Y0M2NmNzkyYTA5MGIzMDg4MmVlNmU1MGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMWQ3YjQ3ODQ0NjA2YTI0OGYzOWE1Y2EwNzg4YTIzOTcyNmJhMzQ1ZTJlMWE1ZTUxYTBhYjllNWZmYjMyNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwZmU2MjQ1Mjc0MzI0MjljNjlmM2EzNjUwOTQyY2UzNzBhOTM1ZjM5N2ZkY2I2MjgwNDgzZDkyOTRhMjY2OWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d24cbbaa2fcd47949c7cc0aeea143134",
+      "statement": "main.py is the command-line entrypoint that opens data/threads.db and compiles the graph with a LangGraph SqliteSaver (checkpointer) and SqliteStore (store) pair against that single SQLite file, distinct from data/events.db; the checkpointer's JsonPlusSerializer is restricted to state.CHECKPOINT_TYPES so a checkpoint cannot make the process load arbitrary Python classes.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L1-L61",
+          "version": "repo-lines-v1:sha256:b9c89a3797d6a99c06dfed1ec2d08f43b19789318fbb3ce490d68f4a9412e3c9:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2ZjNjMzI5NmMzMGQ2MGIwNDEzMDNhZTRkZTI5N2RjOTEzZmNiZTk3NDNiMmVhNTJlN2MyOWM3ZDU4OGU5NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjYzI5MGIzNDhmZDY5M2Y0YmE2OTZkNTQwYWI2Y2Q3ZDVjYWQyZDM3ZDYyMjE4OWMzOWQ5NDZkM2UyMmU5ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        },
+        {
+          "resource": "repo://state.py#L69-L70",
+          "version": "repo-lines-v1:sha256:d199d6b7d636d6831881a96c4e13005b179073f7db245a511e92d11c50229ba8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQ2OWVkYjllZjU5Zjc0Yjc3MzIzZmMyZDUwMjQxODA0ZmQ3ZjllODkxMzU4MzNiYTMxMmQyMWQzZTBhYWI1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjcyZDA3MWQ1MzhjMDU3YjJmZjY0NDgyZGZmZmU5YzFlZGFhMjQyMzhhNDc4MTRkN2RiYTczZDJiOTkxNTcwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjNiOGMyMGZiNjFkODBmNGNiMTI5YThlZjI4NWNmZGNiNzNkZDEwOGQxMjQ0YzhkZmM1ZjIyMGI4MWVhMmM2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c2a61e528c74f419a668960d0c85d33",
+      "statement": "output.py's remember() writes each new report's findings (topic, summary, kept claim texts) into the LangGraph store under the (\"findings\", as_of) namespace, but only for new reports (not follow-ups) and only when runtime.store is not None.",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L86-L87",
+          "version": "repo-lines-v1:sha256:11e6f65f920f0c98bc13b77500c4ee7a512225989638d9c8d7d711cf589bccd6:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYwYjVkYWJkM2Y3OTZlYTMyNmI1NTZmOWE5NDBlNWNkZmYzZTZiODg0MmMwOTJmNmJjMzVmYjQ5YmRhODQ2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjRhYTdiOGU4ZjNmNjI3Y2UwNTZiYjQ3OWJkNjZkNzhkMDk5OWYyYmFkNTcwNmEyMjAwYzE2NjYxNDc5YThjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzljYTAwMTc3NjVhMmMzMWM1ZjlhMzRlOGJiNzQ0NmZkYzFjYzkxYjIzZGRmNjcyMTk4OTI2N2M1OTNkZmY5MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmM4M2U5ZGVmNGVkOWUwMTNiODUyNWU2YzA2NWRjMjc4MWQ2MWRiZjE1OThjOWFjZTExNDg4ZTRkOTJiYWEwNiJ9"
+        },
+        {
+          "resource": "repo://research.py#L89-L93",
+          "version": "repo-lines-v1:sha256:4e896374e17e932203e2d9cd7d634b1e366a140c1ff0d371344f889f6460af73:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFkOTUxMTMxMzg3ZDQ1M2IwYzk5NzllMzJhZWI3YzdkYzllMzA4ODZjYmQzNDNjZjI4YTdjN2JhYmYzNjQyYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTJjNDgxM2MwNjIxOGQ2N2U3M2Y0MWMyMzdmZjMzNDM2NjkzMTU2YmQ2OTc0MDllMGZmZWQ3M2RjNzM0ZTkwNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzA1ZTAwZmEwY2UzMDAxZTNhMTYzODdhNDVhOWIyOTk4OTJjYzYyMzExYTQwZDFjMjFkYmE2OGE5NWVjZGQ1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2U1NWVhZGZhZjYyZWUzNTczNTI2MWYwM2YxZjAwNTUwMTRiNzkyMDdkN2JiZmFjODFmMDE5MzYzMTFmYzQ1YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_82bc0102798c472a85c7f18afd3568fd",
+      "statement": "research.py's recall() reads the last MEMORY_DAYS (7) days of stored findings ending on the report's as-of day from the LangGraph store, deduplicates repeated lines, and injects them into the research agent's prompt as non-citable context; the research agent and remember/recall framing both forbid citing these recalled findings as claims, so every kept claim must come from a fresh, source-verified search_news call.",
+      "evidence": [
+        {
+          "resource": "repo://research.py#L133-L146",
+          "version": "repo-lines-v1:sha256:3f0ba5b4e8bbc7b90d1e8493cb1c3cf04924d23452387c1aebeb94ebffe31331:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MTg5MzRkZDE1ZThjZDc0MmVhZjI0M2JmYzYxZWRkNDhiMWZlZjgwMDI1YTk4MTExMGRmYjc3ZTU2OGFjMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4MGVlYTNlYmU3NzA5NWE1YjZkNTVmODkyYjY2ZTNkOGQ4MjU0OWExZDhiMjBiNjBjZWYyNjM5MDA3NzNlNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlYzRlYzZiYjk4N2Y0M2I1YTUzM2QzNmIyZjZkZTk2MDNmNmU5MWNhN2Y1ODQ1ZDM5MjBiNjY2OWQwOTA3ZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://research.py#L32-L43",
+          "version": "repo-lines-v1:sha256:92f390db383fd4421c02c62ec98930f763917a1c5b5596509edb46e1d668007a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0NWRjM2U0ZTUzNmFlYjUwOWVjNzA0YjY3NTMzZjBjMzFjOGJjZjdjYWQ3ZWZlMzNjMmExZmM5ZGQzOTQ4NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkZDMwYzc1NjUxYWU3ZDIyM2VhOWI2YzI5NTY4ZjljZGE0OThjNzIyMjg5NzU2MTA2YTkzYTA3NTYzNTM3NDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjYjQyOGEyNGE4YmUzMTExODBiY2E2YmJmZjg0NmZjYzVkYjJjMzUwZDk4NjZiNzBmMTNkM2ZhMThjN2RiNzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNGU5Mjk0NzlkZGE3NzljOTM5NzI3M2NiMzkyOTg0MjAwODA4Nzc2YzA2NDFmMTNlYTgxMDYzNDYxYjdlNjIifQ"
+        },
+        {
+          "resource": "repo://research.py#L79-L93",
+          "version": "repo-lines-v1:sha256:0374b18b27be274a64193c382eb0129f4cb78da69d6d852cbaf32996eb1944e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjZGVhNmIzOWUyNWUzZTIzYTg5NTcxODBiMGU1ODQ2ODVkOWRjMjI5ZmUyYThjNzJlMWNkOWZlNGFlOGUxZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyYzQ4MTNjMDYyMThkNjdlNzNmNDFjMjM3ZmYzMzQzNjY5MzE1NmJkNjk3NDA5ZTBmZmVkNzNkYzczNGU5MDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1YmY2NWU2NjVlNDg3YTMzYzY4NTI1ZDZmM2UyMjYxYzVjZjBmMWE0OTM4MTAwNGRhYzczYmFkYTRmMTQ3NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlNTVlYWRmYWY2MmVlMzU3MzUyNjFmMDNmMWYwMDU1MDE0Yjc5MjA3ZDdiYmZhYzgxZjAxOTM2MzExZmM0NWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2920df91101544b89ba683f73a6a92a4",
+      "statement": "graph.py compiles the module-level `graph` object (served by `langgraph dev`/Studio) without a checkpointer or store, because the LangGraph server supplies its own persistence; main.py instead compiles the same build() builder with the SqliteSaver/SqliteStore pair against data/threads.db, so Studio threads and Studio's findings memory are entirely separate from data/threads.db.",
+      "evidence": [
+        {
+          "resource": "repo://graph.py#L1-L9",
+          "version": "repo-lines-v1:sha256:c2288c02950251fea3e1f233da838cacf260566c8829987fda90da7d7028ca30:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiOTVhM2Y2Y2I2ZjU1ZjBlODk0Yjk2NDY1OGY0Y2JhZGJlMWYzNGY0YzcwODIxZGY0NzhkMGM2Y2VkZWYwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTRmYzM5MDQ5Nzk4YTZmYzZkZGE2ZGEwNzE0ZjlmNzkyYWU2NWJiMWFmMTgwN2M3ZDljNjM5NWViNzJiNDYwOSJ9"
+        },
+        {
+          "resource": "repo://graph.py#L45-L45",
+          "version": "repo-lines-v1:sha256:a470c6dded1d01ec674056e1f15c207aeab75ab09816caba56ef9e62a0b5f3ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ3MGM2ZGRlZDFkMDFlYzY3NDA1NmUxZjE1YzIwN2FlYWI3NWFiMDk4MTZjYWJhNTZlZjllNjJhMGI1ZjNlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ3MGM2ZGRlZDFkMDFlYzY3NDA1NmUxZjE1YzIwN2FlYWI3NWFiMDk4MTZjYWJhNTZlZjllNjJhMGI1ZjNlZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTkwYzlkOWY1ZDRmOGFmNWNmNWI5ZWRmODg3ZmZhNjBmMjc2MmI4NjFmYTBmOTUxNzEyNDk3Zjk5MTQyZDdkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://main.py#L50-L55",
+          "version": "repo-lines-v1:sha256:431e0453ae66133f7b000064f662a89f56f3ff1a2b7d78ade43cd3e4bdc28980:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDJiNWU3Njg1OGQ2MjFjNTI4OWM5MDExZDY3ZjhlYzZlOGFkMTU5YzRhNTQzNTAwNTJmYmQxZDlkYzkzYzMxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2N2ZhMTUxOTMyYmZlNTE4ZjY3ZmEwNTViNzhhYmM5MjU2ZmM2ODlkN2UyZmRlMjkxMjdiNmQ0OWQ3OTEwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQxOTkxMWE4NDkwMDAwZjYzMTVjZmI1N2FmZjMxNzM1NGFiM2I2ZGU0NGU1MmYxMzBjNjRlZDQ1MDY3ODY5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzdkYTYxZDEwNWVmZjdlNTFiNGY2YzU2NWVhNWY5Mjk0MjQ4OGU3MjE3M2UyZWFhMTEwMzliMDY4MTExYjE3MyJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-02T09:22:29.186Z"
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:9a2478b1aa8cb6e6077f1ffdbfec47e20270af7b7c5f8fa43a39ce2b60eb43a7",
+  "claims": [
+    {
+      "id": "claim_c102914ea9b14ff7a694e400fa7b31a8",
+      "statement": "main.py and graph.py compile the same node wiring (gdelt -> triage -> research -> verify -> price -> output) differently: main.py's CLI run compiles graph.build() with an explicit SqliteSaver checkpointer and SqliteStore backed by data/threads.db, while graph.py's module-level `graph = build().compile()` (served by `uv run langgraph dev` via langgraph.json's event_graph entry) is compiled with no checkpointer, relying on the LangGraph Studio dev server's own persistence.",
+      "evidence": [
+        {
+          "resource": "repo://graph.py#L1-L43",
+          "version": "repo-lines-v1:sha256:0e6f56fd4860bee517cebed26f46bbb18468724d10f5fe966d9f8b9562e249fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmYjk1YTNmNmNiNmY1NWYwZTg5NGI5NjQ2NThmNGNiYWRiZTFmMzRmNGM3MDgyMWRmNDc4ZDBjNmNlZGVmMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwY2ZiOTFkYWM3ZDhlZTkxYTVlOWU5MTAxMjJkZTU5MzAyMGU4ZjU5YjMzMjQ0ZTNmZTE5N2I3NGMyYjRhNmIifQ"
+        },
+        {
+          "resource": "repo://langgraph.json",
+          "version": "repo-file-v1:sha256:eaaccad74029505a82bb85c9730213dd0fd377058b648ded3e5d8333baa3b0bf"
+        },
+        {
+          "resource": "repo://main.py#L49-L56",
+          "version": "repo-lines-v1:sha256:e21f53486eb49e658f71ceee73b879c9ea8aca8f0a649274f971b843e4c2db8b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE4NjRjMWE1YTM0NjUxMmRlYzM1ZjAyY2FiYmE4MmEzMmYzYjI1OTYxZDc3NTU1NTg3NmU4YTU5YTRiZTRlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTNkOWM3NzYwYzdhN2M3Yjg5ZjhkMGE5YTY5Yzc1YzU5ZmVmNmJjMDljY2FlOGE2MDc4NzI3YTliZDVkNGM1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWFkZDA5M2YwMjEzMzhlNmRmZWYyZjJjMjhkYTVhOWQ1ODQ1ZWViMWNiZTY0OWVmOGQ3MWQ2MDU0YTY4OWVmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTVmZmMxMjE4NGFjNzM3OGVjNjI0YTBlOTJiNGYzNzFjZDdjODRkNTNmOWRlZjkyNDdhNmY3YjM0ZDdhNWQ5ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_aae21e4fcba94b76bd3df5af2b15ce2b",
+      "statement": "main.py's CLI accepts three invocation shapes: a bare `uv run main.py` (new thread, latest GDELT window), `--date YYYY-MM-DD` (new thread, GDELT window anchored to that day), and `--thread ID \"question\"` (continues thread ID as a follow-up); supplying a question without --thread is rejected by argparse.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L39-L50",
+          "version": "repo-lines-v1:sha256:b8e7ae44cda9a9c41a63e2335469143eb1bd31f30799e89bb24bed7254c1495c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZTMxMjU3ZGMwYWUxZDU5MzAzN2MyODBjOWFkNTA4MTliOGE2YzhjZjcyOGJlMDcxNmQwMGEzZWVjYzA0YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyYjVlNzY4NThkNjIxYzUyODljOTAxMWQ2N2Y4ZWM2ZThhZDE1OWM0YTU0MzUwMDUyZmJkMWQ5ZGM5M2MzMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwZTJhMWQ5NzM1NmJkNzcyOTlkYjM2Nzk2MzFkYzRiNDE3YmQ2ZTVlMjNiODIyZGY3MzYwYzk1YjdjNmE0YTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmNTg5YWNkYzRlZmYxYjBmNTdhOTJlOGY4YjEzYjNjOTI3MjIyM2FhYjVmZjg2YjdkNTcwZjE0NzBlNGM4YmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fb9e4a1c9422456499e81ea92676cbfd",
+      "statement": "Despite the README and main.py's --date help text describing the default (no --date) window as 'the latest 24 hours', gdelt.py actually fetches 6 hours of data: UPDATES=24 refers to 24 GDELT GKG files published every 15 minutes (24 * 15min = 6 hours), not 24 hours. This is a known doc/code mismatch between the CLI help/README prose and the actual gdelt.py behavior.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L26-L26",
+          "version": "repo-lines-v1:sha256:11205dac9304f70412cf782f31d65f09d21c146735e30c6cc4eef692177b0a85:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEyMDVkYWM5MzA0ZjcwNDEyY2Y3ODJmMzFkNjVmMDlkMjFjMTQ2NzM1ZTMwYzZjYzRlZWY2OTIxNzdiMGE4NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEyMDVkYWM5MzA0ZjcwNDEyY2Y3ODJmMzFkNjVmMDlkMjFjMTQ2NzM1ZTMwYzZjYzRlZWY2OTIxNzdiMGE4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGE0YmVhMGI0NTVmYmQyMjNkY2U5NDc5MWM3MDdhZTU0MTc4ZGYzZGYxMzhiMjg3NTY3MGMyZDM3ZmM2ZDQ4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWUzMjQ0ZDUxMTJjNmFiZmE4ZWM1MGQ5MGZiMTEwMDg1N2RiYWM2N2I2NzEwOWM4ZmI1Y2EwZTMxMWRhZmI0ZCJ9"
+        },
+        {
+          "resource": "repo://gdelt.py#L1-L9",
+          "version": "repo-lines-v1:sha256:430746014ac6bf65696344aea09c9872cb04779904206d3e301bb314082cb5c6:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjhkNWExM2IyMDQ1NDhkYjA2OTRhMDhiNTZkNjVhMDdkMGZjYmRjMmQzYTBhOTYxYzIzODJmMmQxZDZlODdjZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMzYTJiMzQ0MmU5ZWU1YmNjOGE3YWZlNjNjMjVhMWJhMDY1YTk1OGI2MmQxYmQyZGQ5MWE0NmQxMjgyZjBlZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjM4NzBmOWIyMmU4YjVjNzY1MTRiOTY3NmMwODMxNGJkYTA1N2MzYmFkMTA4ZTYwNGUzMzU3NzBhYzNkOWYzZCJ9"
+        },
+        {
+          "resource": "repo://gdelt.py#L27-L27",
+          "version": "repo-lines-v1:sha256:5cc84831c85a2df3d19a1e6f117e25a0fcfe3c1577a141c870fdee61546f33ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNjODQ4MzFjODVhMmRmM2QxOWExZTZmMTE3ZTI1YTBmY2ZlM2MxNTc3YTE0MWM4NzBmZGVlNjE1NDZmMzNhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNjODQ4MzFjODVhMmRmM2QxOWExZTZmMTE3ZTI1YTBmY2ZlM2MxNTc3YTE0MWM4NzBmZGVlNjE1NDZmMzNhZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDJjOWRhMmE5MzA5NGU2N2ZjN2Q0MjM2NWU1MDBiYmI5YTlhZDExZTJlODNiNDU2ZTA3ZDkwNzk1YmM5NDBjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGUzN2RkYzY4YmFhYzU4NjA2Zjg4YjUyOGM4Y2MyNmU0NjNmOThlMzhjYmIyODc2OTI2MWEwMWRiZjdkYmYyNSJ9"
+        },
+        {
+          "resource": "repo://main.py#L42-L42",
+          "version": "repo-lines-v1:sha256:46c8fc3883fb2b7b944248b09ec56f49fafa0ce6564796542aee4e2ffadd5e02:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDZjOGZjMzg4M2ZiMmI3Yjk0NDI0OGIwOWVjNTZmNDlmYWZhMGNlNjU2NDc5NjU0MmFlZTRlMmZmYWRkNWUwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDZjOGZjMzg4M2ZiMmI3Yjk0NDI0OGIwOWVjNTZmNDlmYWZhMGNlNjU2NDc5NjU0MmFlZTRlMmZmYWRkNWUwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTkwMmNmOWEyY2FhNjhlYjE1NTg5NjAwOTQ1YWZmZmI5NjFmOGE4YWE0OTM4YTk5NTk1NmIzMTVmYTVkNjFmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDM0ODU4YWI0ODE3NDUzMTM2Y2VhYWNjZTdmNDZiN2VkMzk2MTgwOTE1OTYzZjU0YTQzZjIzMjM0N2U2NzJmOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0fcddd8a9d0f4cb99c1c51401e67815d",
+      "statement": "main.py streams the compiled graph with stream_mode=\"updates\", so each yielded step is a single node's changed-field update rather than full state; the describe() helper prints list-valued fields as an item count (`field: N items`) and scalar fields as a JSON-encoded value truncated to 200 characters, giving a per-node console trace of a run.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L30-L37",
+          "version": "repo-lines-v1:sha256:0dacd32b1cbd753be236ea80a1e593d46318481a863d7c93518c168083e72889:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjBkNjk0NGFkMjkxOTVlYWZkMDZlODllYjg4OGIwODUyZWI3NWM5ZWI0ZTEzMjNiOTYwYjI1NDcxZTA0MmEwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTZkNWFlY2IxZjQwNmE1ZGU4Y2Y3NTZhMWRjZjMwMDExYTU1ZjZiOTdlMWNhMmVlZjExYjk4NzA5MTFjOWRjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDcyYWZlMDIyYTRmOTIzMTBmYmM3Yjg5MGQwYTM4NTFhMjdmYzVjYzRhNmVhOTg5ZDUyNGVmY2VmNDgxMzJhYiJ9"
+        },
+        {
+          "resource": "repo://main.py#L56-L60",
+          "version": "repo-lines-v1:sha256:0e34fbcfc1f2fefeb0e1bb10fe949ab7445d140eaa20bd3b928e25ee43352390:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTNkOWM3NzYwYzdhN2M3Yjg5ZjhkMGE5YTY5Yzc1YzU5ZmVmNmJjMDljY2FlOGE2MDc4NzI3YTliZDVkNGM1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNlMWM0NzBiMzc2NTUwZjc2MGI5Y2Q1Mjg2OWI5MDVmZDk5MjU4ZjYxM2ZkZTMzN2U3YzkyODFmM2U4YWQ3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzEwOTY2MTY2YzFkM2IyOGEzOTMxNTZmNzdlODYyZDgxMWE0OGEzYTY5ZWVmYjcxMTI1ZWNjM2Q1OWIwMTFmYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWM4MWExODU5OTFkMWZlZGI3NTYyNmQ2YzZkMGJiYzZiZDc3NWJhNmRjMTkwMzM0N2NhNWJiMGJmYmFmMTVlMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_855d5cf045b04c0cbf13c0db0e974c53",
+      "statement": "After streaming completes, main.py prints the run's thread ID along with a ready-to-use continuation command (`uv run main.py --thread <id> \"your question\"`), which is the CLI's only surfaced record of the thread ID for later follow-ups.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L61-L61",
+          "version": "repo-lines-v1:sha256:8cc290b348fd693f4ba696d540ab6cd7d5cad2d37d622189c39d946d3e22e9e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNjMjkwYjM0OGZkNjkzZjRiYTY5NmQ1NDBhYjZjZDdkNWNhZDJkMzdkNjIyMTg5YzM5ZDk0NmQzZTIyZTllNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGNjMjkwYjM0OGZkNjkzZjRiYTY5NmQ1NDBhYjZjZDdkNWNhZDJkMzdkNjIyMTg5YzM5ZDk0NmQzZTIyZTllNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2MzZGJmYjZjODE1YzE0MjIxOTJjMTkwNmE3Yjk4YjJmMGI0YmEwZDY4MTNiYmEzZmYxMzZlYWI0ODg2MjRmYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Q0MTM0MGNjMjM5YTE1OWNlOWI2MDIyZTlmNjMyMjgzMmUyZWFkNzZjYWU5ZTQ3NTRkMjEwZWI4ZmI2ZDVlOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4cdfa579e57645a9bfc00c62ab643528",
+      "statement": "langgraph.json declares a single graph, event_graph, pointing at ./graph.py:graph and loading environment variables from .env; `uv run langgraph dev` serves this graph for LangGraph Studio, showing each node and its state field changes live as a run progresses.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L55-L61",
+          "version": "repo-lines-v1:sha256:95025a2cccdc8d5fce674918b34bd0e9c6c01fd90686c7293d1ce20ac0746755:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTM0N2Q5ZTcyMGVkYzgwNmIxZDUzYjllNmQ4ZDVkMmIzMDUxMWVjOTk3YTkyNjk3ZGM1OThiM2RmMjdkZjc0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzk0NmIxNzRmYzFmNTJhNGMyZTE5ODBhODE0ODcwOGZhMGYwYzQxZmNlNGJhMGJjMDU2ZjUwNWE4NzBiMGI3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjY3NTIwOTJiNWQ0OGYyOTFkYjNmNjMzMTAxMDRlMzllYTM3MGM0MDg5ZDY3YTlkNjBjMWNmZjk4ZTRlZWU4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGExOGQyMzQ1NTRlNDc2NDc2ZWQ5YTM0NGYwYzdhZThjNTQ0ZDc2ZGZiZjQzZWY1ODExMDYwNzYzMjA0YjMwZCJ9"
+        },
+        {
+          "resource": "repo://graph.py#L6-L8",
+          "version": "repo-lines-v1:sha256:6bf7127da19eed50409045aa449c4740c1e09081aa8aff9b58b5e7831c8167aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNjMzQ2MTYzY2Q1OWY4OWRjZjFiODQ3OTdlZDZiNWFkMzRiMmU4NzgwNWQ5MWEyZTkzYjFkMjFlZDVjMDU4MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTE2ZDEyYjAzZmQ5NmFmM2MyYThhNmE0Y2M4ZDZiOTc1YTVjNmMyNjE2YWMxZTJjOTAxNGM2MWQ0Yzk3MDY1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjhkNjhlNzc3NzhiYzVmYWU4YjFjZmY3NTkwZWU3OWEzYWU3MDVlODBkNDc0MzhmNDU1NTNlZjQ4MjUxMWM1NSJ9"
+        },
+        {
+          "resource": "repo://langgraph.json",
+          "version": "repo-file-v1:sha256:eaaccad74029505a82bb85c9730213dd0fd377058b648ded3e5d8333baa3b0bf"
+        }
+      ]
+    },
+    {
+      "id": "claim_c2503ce1f56e42219b6d6c40d4e91910",
+      "statement": "Because graph.py's module-level graph object is compiled without a checkpointer or store, LangGraph Studio threads created via `uv run langgraph dev` are persisted by Studio's own dev-server storage and are entirely separate from data/threads.db, which only holds state for threads run via the main.py CLI.",
+      "evidence": [
+        {
+          "resource": "repo://graph.py#L6-L8",
+          "version": "repo-lines-v1:sha256:6bf7127da19eed50409045aa449c4740c1e09081aa8aff9b58b5e7831c8167aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNjMzQ2MTYzY2Q1OWY4OWRjZjFiODQ3OTdlZDZiNWFkMzRiMmU4NzgwNWQ5MWEyZTkzYjFkMjFlZDVjMDU4MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTE2ZDEyYjAzZmQ5NmFmM2MyYThhNmE0Y2M4ZDZiOTc1YTVjNmMyNjE2YWMxZTJjOTAxNGM2MWQ0Yzk3MDY1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjhkNjhlNzc3NzhiYzVmYWU4YjFjZmY3NTkwZWU3OWEzYWU3MDVlODBkNDc0MzhmNDU1NTNlZjQ4MjUxMWM1NSJ9"
+        },
+        {
+          "resource": "repo://main.py#L50-L55",
+          "version": "repo-lines-v1:sha256:431e0453ae66133f7b000064f662a89f56f3ff1a2b7d78ade43cd3e4bdc28980:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDJiNWU3Njg1OGQ2MjFjNTI4OWM5MDExZDY3ZjhlYzZlOGFkMTU5YzRhNTQzNTAwNTJmYmQxZDlkYzkzYzMxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2N2ZhMTUxOTMyYmZlNTE4ZjY3ZmEwNTViNzhhYmM5MjU2ZmM2ODlkN2UyZmRlMjkxMjdiNmQ0OWQ3OTEwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQxOTkxMWE4NDkwMDAwZjYzMTVjZmI1N2FmZjMxNzM1NGFiM2I2ZGU0NGU1MmYxMzBjNjRlZDQ1MDY3ODY5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzdkYTYxZDEwNWVmZjdlNTFiNGY2YzU2NWVhNWY5Mjk0MjQ4OGU3MjE3M2UyZWFhMTEwMzliMDY4MTExYjE3MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_af166a3744384e309dbfa5ecb456b506",
+      "statement": "A successful run's output node writes a Markdown report to output/<as_of>-<thread>-<time>.md (also used as the reply AIMessage content) and a parallel JSON file at the same path with .json extension containing a subset of state fields (as_of, jev_status, severe, findings, rejected, verify_status, moves, price_window).",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L74-L87",
+          "version": "repo-lines-v1:sha256:e1ff22911c0fa177fc4c9302a9e9359ae808a4cfee65d6be4e15fbcea1687cda:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3YmEyMjFmM2ZlOWE3NWQ0NTdjMmMzYmNhZmE0MmJlYjAxODEyN2EzMzlmMjYzOWYzYjZjNTljN2ZiZjQ1YzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0YWE3YjhlOGYzZjYyN2NlMDU2YmI0NzliZDY2ZDc4ZDA5OTlmMmJhZDU3MDZhMjIwMGMxNjY2MTQ3OWE4YzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NjgyZGVmOTBmZGVjY2Y5YTBmOWU4MTVjNjlkNTI0MzNjNTJkODdiYjg2Y2M2ZDc0NzRkNjAwMmEzMjYzNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjODNlOWRlZjRlZDllMDEzYjg1MjVlNmMwNjVkYzI3ODFkNjFkYmYxNTk4YzlhY2UxMTQ4OGU0ZDkyYmFhMDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_60960d4a5c474e659fe0fbc5358fa055",
+      "statement": "The output node also appends each run's metadata, stories (for non-followup runs), kept claims, rejected claims, and price moves to data/events.db via db.py, using ON CONFLICT DO NOTHING inserts so re-logging or overlapping-window re-fetches are idempotent.",
+      "evidence": [
+        {
+          "resource": "repo://output.py#L54-L71",
+          "version": "repo-lines-v1:sha256:12c0a2b8047961c4499200d867666a61f176a34564bfb2641fda4e75dbe4a570:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMDNhMTJlZDhiZDA3NTMzOWQ2ZmEyNTczNmJiNjc3NmQ2MjU2NjM1OGU4M2E1YzI2MGMzZDRmMDlmOWM3MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0NDI4ZDQxNmRhYzhhMjU0OTVjNWY4YjhiNDU1ZTE0ZjRmMGQwM2Y0M2NmNzkyYTA5MGIzMDg4MmVlNmU1MGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMWQ3YjQ3ODQ0NjA2YTI0OGYzOWE1Y2EwNzg4YTIzOTcyNmJhMzQ1ZTJlMWE1ZTUxYTBhYjllNWZmYjMyNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwZmU2MjQ1Mjc0MzI0MjljNjlmM2EzNjUwOTQyY2UzNzBhOTM1ZjM5N2ZkY2I2MjgwNDgzZDkyOTRhMjY2OWEifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.6.1",
+    "at": "2026-10-02T09:22:29.186Z"
+  }
+}
