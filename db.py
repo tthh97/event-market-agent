@@ -49,6 +49,9 @@ CREATE TABLE IF NOT EXISTS story (          -- a story triage kept, on new repor
     severity REAL,                          -- NULL when Jev did not score
     articles INTEGER NOT NULL,
     sites INTEGER NOT NULL,
+    topic TEXT,                             -- research's topic, joins to claim.topic; NULL on runs before 2026-10
+    summary TEXT,                           -- research's summary; NULL on runs before 2026-10
+    themes TEXT,                            -- GDELT market themes, ;-separated; NULL on runs before 2026-10
     PRIMARY KEY (run_id, rank)
 );
 CREATE TABLE IF NOT EXISTS claim (          -- a claim verify kept
@@ -59,6 +62,7 @@ CREATE TABLE IF NOT EXISTS claim (          -- a claim verify kept
     source_date TEXT NOT NULL,
     sector TEXT,
     unverified INTEGER NOT NULL,
+    country TEXT,                           -- set with sector; NULL on runs before 2026-10
     PRIMARY KEY (run_id, text)
 );
 CREATE TABLE IF NOT EXISTS rejection (      -- a claim verify removed, and why
@@ -66,12 +70,15 @@ CREATE TABLE IF NOT EXISTS rejection (      -- a claim verify removed, and why
     line TEXT NOT NULL,
     PRIMARY KEY (run_id, line)
 );
-CREATE TABLE IF NOT EXISTS price_move (     -- a sector ETF's move in the run's price window
+CREATE TABLE IF NOT EXISTS market_move (    -- one tag's ETF move in the run's price window
     run_id TEXT NOT NULL REFERENCES run,
     sector TEXT NOT NULL,
+    country TEXT NOT NULL,
+    etf TEXT NOT NULL,
+    benchmark TEXT NOT NULL,                -- SPY or ACWI
     move REAL NOT NULL,                     -- percent
-    vs_spy REAL NOT NULL,                   -- percentage points
-    PRIMARY KEY (run_id, sector)
+    vs_benchmark REAL NOT NULL,             -- percentage points
+    PRIMARY KEY (run_id, sector, country)
 );
 """
 
@@ -82,4 +89,21 @@ def connect(path=None):
     path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(path)
     connection.executescript(SCHEMA)
+    upgrade(connection)
     return connection
+
+
+def upgrade(connection):
+    """Bring a database made before countries up to SCHEMA. Adds columns, copies old price rows as US
+    moves, and drops price_move. Safe to run on every connect."""
+    for table, column in [("story", "topic"), ("story", "summary"), ("story", "themes"), ("claim", "country")]:
+        if column not in {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}:
+            connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
+    if connection.execute("SELECT 1 FROM sqlite_master WHERE name = 'price_move'").fetchone():
+        from prices import SECTOR_ETFS
+        rows = connection.execute("SELECT run_id, sector, move, vs_spy FROM price_move").fetchall()
+        connection.executemany("INSERT INTO market_move VALUES (?, ?, 'us', ?, 'SPY', ?, ?) ON CONFLICT DO NOTHING",
+                               [(r, s, SECTOR_ETFS[s], m, v) for r, s, m, v in rows])
+        connection.execute("UPDATE claim SET country = 'us' WHERE sector IS NOT NULL AND country IS NULL")
+        connection.execute("DROP TABLE price_move")
+    connection.commit()

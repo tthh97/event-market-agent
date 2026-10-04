@@ -4,7 +4,7 @@
 Code removes a claim whose URL search_news did not return, or whose numbers are not in that article.
 Jev answers three questions per claim in one request: does the article state it (supported), is it
 current on the as-of day, meaning news from the 7 days ending then or a standing fact the source presents
-as true now (current), and which sector's costs, prices or demand it changes. Below DOUBT on supported or current removes the claim. Below SURE keeps it marked unverified.
+as true now (current), which sector's costs, prices or demand it changes, and in which country's market. Below DOUBT on supported or current removes the claim. Below SURE keeps it marked unverified.
 Without TYPESAFE_API_KEY, or if Jev fails, only the code checks run, and verify_status says so.
 Dates come from the tool that recorded them, never from a model.
 """
@@ -32,6 +32,13 @@ SECTORS = {
     "real_estate": "REITs and property",
     "none": "no listed companies' costs, prices or demand are directly changed by this",
 }
+COUNTRIES = {
+    "us": "United States", "china": "China", "japan": "Japan", "india": "India", "uk": "United Kingdom",
+    "eurozone": "euro area as a whole", "germany": "Germany", "france": "France", "canada": "Canada",
+    "australia": "Australia", "south_korea": "South Korea", "taiwan": "Taiwan", "brazil": "Brazil",
+    "mexico": "Mexico", "saudi_arabia": "Saudi Arabia", "singapore": "Singapore",
+    "global": "listed companies in many countries about equally, e.g. a world oil price move",
+}
 
 
 def numbers(text):
@@ -40,8 +47,9 @@ def numbers(text):
 
 
 def jev_checks(claims, as_of):
-    """[(supported, current, sector, sector_confidence)] per (claim, source), from one Jev request."""
-    state = {"as_of": as_of, "sectors": SECTORS,
+    """[(supported, current, sector, sector_confidence, country, country_confidence)] per (claim, source),
+    from one Jev request."""
+    state = {"as_of": as_of, "sectors": SECTORS, "countries": COUNTRIES,
              "claims": [{"text": c.text, "source": s.model_dump(exclude={"url"}) if s else {}} for c, s in claims]}
     questions = {}
     for i in range(len(claims)):
@@ -53,11 +61,14 @@ def jev_checks(claims, as_of):
                                              f"as true now (a figure, structure, exposure, position or estimate). Answer no "
                                              f"only if it reports an older event or an outdated figure as if it were new."),
             f"sector{i}": Choice(instructions=f"Whose costs, prices or demand does {text} most directly change? "
-                                              f"Pick the US stock-market sector from `sectors`.", criteria=SECTORS)}
+                                              f"Pick the stock-market sector, in any country, from `sectors`.",
+                                 criteria=SECTORS),
+            f"country{i}": Choice(instructions=f"Whose listed companies does {text} most directly affect? "
+                                               f"Pick the country from `countries`.", criteria=COUNTRIES)}
     with TypeSafeClient(timeout=90) as client:
         a = client.system_one(state=state, questions=questions).model_dump(mode="json")["answers"]
-    return [(a[f"supported{i}"]["noul"], a[f"current{i}"]["noul"], a[f"sector{i}"]["choice"], a[f"sector{i}"]["confidence"])
-            for i in range(len(claims))]
+    return [(a[f"supported{i}"]["noul"], a[f"current{i}"]["noul"], a[f"sector{i}"]["choice"], a[f"sector{i}"]["confidence"],
+             a[f"country{i}"]["choice"], a[f"country{i}"]["confidence"]) for i in range(len(claims))]
 
 
 def review(claim, source, answer):
@@ -69,13 +80,14 @@ def review(claim, source, answer):
         return f"number(s) {', '.join(sorted(missing))} not in the source"
     update = {"source_date": source.published}
     if answer:
-        supported, current, sector, confidence = answer
+        supported, current, sector, confidence, country, country_confidence = answer
+        tagged = sector != "none" and min(confidence, country_confidence) >= SECTOR_SURE
         if supported < DOUBT:
             return "Jev: the source does not state it"
         if current < DOUBT:
             return "Jev: it is about an earlier period"
         update |= {"unverified": min(supported, current) < SURE,
-                   "sector": sector if sector != "none" and confidence >= SECTOR_SURE else None}
+                   "sector": sector if tagged else None, "country": country if tagged else None}
     return claim.model_copy(update=update)
 
 

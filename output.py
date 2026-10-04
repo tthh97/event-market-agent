@@ -17,7 +17,6 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.runtime import Runtime
 
 import db
-from prices import SECTOR_ETFS
 from research import remember
 from state import State
 
@@ -37,15 +36,16 @@ def markdown(state, followup):
             lines.append(f"Jev severity: {score}. GDELT: {story.articles} articles on {story.sites} sites, lead {story.url}")
         lines += ["", finding.summary, ""]
         for claim in finding.claims:
-            sector = f" Sector: {claim.sector}." if claim.sector else ""
+            sector = f" Sector: {claim.sector}, {claim.country}." if claim.sector else ""
             flag = " Unverified: Jev was unsure the source supports it for this week." if claim.unverified else ""
             lines.append(f"- {claim.text} ([source]({claim.source_url}), {claim.source_date}).{sector}{flag}")
         lines.append("")
     if state.price_window:
         lines += ["## Market reaction", ""]
         if state.moves:
-            lines += ["| Sector | ETF | Move | vs SPY |", "|---|---|---|---|"]
-            lines += [f"| {s} | {SECTOR_ETFS[s]} | {m:+.1f}% | {v:+.1f} pts |" for s, (m, v) in state.moves.items()] + [""]
+            lines += ["| Sector | Market | ETF | Move | vs benchmark |", "|---|---|---|---|---|"]
+            lines += [f"| {m.sector} | {scope(m)} | {m.etf} | {m.move:+.1f}% | {m.vs_benchmark:+.1f} pts vs {m.benchmark} |"
+                      for m in state.moves] + [""]
         lines += [state.price_window, ""]
     if state.rejected:
         lines += ["## Removed by verify", ""] + [f"- {r}" for r in state.rejected] + [""]
@@ -75,6 +75,13 @@ th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line
 .up { color: var(--up); } .down { color: var(--down); }
 details summary { cursor: pointer; color: var(--muted); }
 """
+
+
+def scope(move):
+    """What a move measures: the sector itself, or a whole country's market."""
+    if move.country in ("us", "global"):
+        return f"{move.country}, sector ETF"
+    return f"{move.country}, whole market"
 
 
 def link(url, label):
@@ -111,7 +118,7 @@ def html(state, followup):
         card.append(f"<p>{escape(finding.summary)}</p>")
         items = []
         for claim in finding.claims:
-            tags = f'<span class="tag">{escape(claim.sector)}</span>' if claim.sector else ""
+            tags = f'<span class="tag">{escape(claim.sector)} · {escape(claim.country)}</span>' if claim.sector else ""
             if claim.unverified:
                 tags += '<span class="tag warn" title="Jev was unsure the source supports it for this week">Unverified</span>'
             items.append(f"<li>{escape(claim.text)} ({link(claim.source_url, 'source')}, "
@@ -122,10 +129,11 @@ def html(state, followup):
     if state.price_window:
         body.append("<h2>Market reaction</h2>")
         if state.moves:
-            rows = "".join(f"<tr><td>{escape(s)}</td><td>{SECTOR_ETFS[s]}</td><td>{signed(m, '%')}</td>"
-                           f"<td>{signed(v, ' pts')}</td></tr>" for s, (m, v) in state.moves.items())
-            body.append('<section class="card"><table><thead><tr><th>Sector</th><th>ETF</th><th>Move</th>'
-                        f"<th>vs SPY</th></tr></thead><tbody>{rows}</tbody></table></section>")
+            rows = "".join(f"<tr><td>{escape(m.sector)}</td><td>{escape(scope(m))}</td><td>{m.etf}</td>"
+                           f"<td>{signed(m.move, '%')}</td><td>{signed(m.vs_benchmark, ' pts')} vs {m.benchmark}</td></tr>"
+                           for m in state.moves)
+            body.append('<section class="card"><table><thead><tr><th>Sector</th><th>Market</th><th>ETF</th>'
+                        f"<th>Move</th><th>vs benchmark</th></tr></thead><tbody>{rows}</tbody></table></section>")
         body.append(f'<p class="muted">{escape(state.price_window)}</p>')
     if state.rejected:
         removed = "".join(f"<li>{escape(r)}</li>" for r in state.rejected)
@@ -145,16 +153,19 @@ def log(run_id, thread_id, state, followup):
                            (run_id, thread_id, state.as_of, "followup" if followup else "events", state.jev_status,
                             state.verify_status, state.price_window))
         if not followup:
-            connection.executemany("INSERT INTO story VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING",
-                                   [(run_id, i + 1, s.title, s.url, s.severity, s.articles, s.sites)
+            found = state.findings + [None] * len(state.severe)  # research returns one finding per story, in order
+            connection.executemany("INSERT INTO story VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING",
+                                   [(run_id, i + 1, s.title, s.url, s.severity, s.articles, s.sites,
+                                     found[i] and found[i].topic, found[i] and found[i].summary, ";".join(s.themes))
                                     for i, s in enumerate(state.severe)])
-        connection.executemany("INSERT INTO claim VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING",
-                               [(run_id, f.topic, c.text, c.source_url, c.source_date, c.sector, c.unverified)
-                                for f in state.findings for c in f.claims])
+        connection.executemany("INSERT INTO claim VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING",
+                               [(run_id, f.topic, c.text, c.source_url, c.source_date, c.sector, c.unverified,
+                                 c.country) for f in state.findings for c in f.claims])
         connection.executemany("INSERT INTO rejection VALUES (?, ?) ON CONFLICT DO NOTHING",
                                [(run_id, line) for line in state.rejected])
-        connection.executemany("INSERT INTO price_move VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING",
-                               [(run_id, sector, move, vs_spy) for sector, (move, vs_spy) in state.moves.items()])
+        connection.executemany("INSERT INTO market_move VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING",
+                               [(run_id, m.sector, m.country, m.etf, m.benchmark, m.move, m.vs_benchmark)
+                                for m in state.moves])
 
 
 def output(state: State, config: RunnableConfig, runtime: Runtime) -> dict:
