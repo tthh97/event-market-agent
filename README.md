@@ -2,7 +2,7 @@
 
 A LangGraph graph that answers: **which of today's news stories could matter economically, and what do the sources say about them?**
 
-It takes the market stories GDELT saw most widely published in the last 6 hours, has Jev score their economic severity, researches the 3 most severe with Claude and Tavily, keeps only the claims code can tie to a source, shows how the affected US sectors moved, and writes the report as Markdown and as a standalone HTML page. You can then ask follow-up questions in the same thread. Every step is a node in LangSmith Studio and a span in the LangSmith trace.
+It takes the market stories GDELT saw most widely published in the last 6 hours, has Jev score their economic severity, researches the 5 most severe with Claude and Tavily, keeps only the claims code can tie to a source, tags each with a sector and a country, shows how those markets moved, and writes the report as Markdown and as a standalone HTML page. You can then ask follow-up questions in the same thread. Every step is a node in LangSmith Studio and a span in the LangSmith trace.
 
 New to the project? Start with [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md). For the design in detail, see [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md).
 
@@ -16,6 +16,7 @@ cp .env.example .env                 # fill in the keys below
 uv run main.py                       # latest 6 hours of news
 uv run main.py --date 2026-09-30     # 6 hours ending 23:45 UTC that day
 uv run main.py --thread <id> "Which airlines could be affected by the flydubai incident?"
+uv run digest.py --from 2026-10-02 --to 2026-10-04   # one page for the stored runs in a date range
 ```
 
 | Key | Needed for |
@@ -37,10 +38,10 @@ gdelt -> triage -> research -> verify -> price -> output
 | Node | File | LLM | What it does |
 |---|---|---|---|
 | gdelt | `gdelt.py` | no | Reads GDELT's Global Knowledge Graph for the 6 hours ending at the newest 15-minute update. Keeps articles with a market theme such as `ECON_OILPRICE`, groups them by page title, and keeps the 30 published on the most sites |
-| triage | `triage.py` | Jev | Scores each story's severity (0 minor .. 3 severe) and keeps the 3 highest |
+| triage | `triage.py` | Jev | Scores each story's severity (0 minor .. 3 severe) and keeps the 5 highest |
 | research | `research.py` | Claude | One `create_agent` per story with one tool, `search_news` (Tavily, last 7 days only). Returns a summary and claims, each with a source URL and date |
-| verify | `verify.py` | Jev | Code drops claims whose URL the search never returned or whose numbers are not in the article. Jev then checks each claim's meaning and freshness and picks its US sector. Unsure claims are kept and marked unverified |
-| price | `prices.py` | no | Each sector's ETF move over the last closed session, and its difference from SPY (Yahoo Finance) |
+| verify | `verify.py` | Jev | Code drops claims whose URL the search never returned or whose numbers are not in the article. Jev then checks each claim's meaning and freshness and picks its sector and country. A tag needs Jev at least 0.75 sure of both. Unsure claims are kept and marked unverified |
+| price | `prices.py` | no | Each tag's ETF move over the last closed session (Yahoo Finance). US tags use the sector ETF against SPY, global tags the global sector ETF against ACWI, and other countries the whole country's ETF against ACWI |
 | output | `output.py` | no | Writes `output/<day>-<thread>-<time>.md` and a matching `.html` page, and returns the Markdown as the reply |
 
 Where the numbers come from: severity from Jev, dates from the search tool (verify overwrites the model's), and every number in a claim must appear in its article's text.
@@ -58,11 +59,15 @@ uv run main.py --date 2026-09-30
 
 | Path | Contents |
 |---|---|
-| `data/events.db` | Every market GDELT row fetched, and every run's stories, claims, removed claims and price moves (`db.py`). Rows are only added, never duplicated, so a run 15 minutes after another downloads 1 new file instead of 24 |
+| `data/events.db` | Every market GDELT row fetched, and every run's stories (with summaries and themes), claims (with sector and country), removed claims and market moves (`db.py`). `db.upgrade()` brings an older database up to date on connect. Rows are only added, never duplicated, so a run 15 minutes after another downloads 1 new file instead of 24 |
 | `data/threads.db` | LangGraph checkpoints (threads) and store. The store keeps each report's verified findings, and research shows the last 7 days of them to the agent as context it may not cite |
 | `output/` | One Markdown report and one HTML page per run |
 
 All three are gitignored.
+
+## Combined page
+
+`uv run digest.py --from <day> --to <day>` reads `data/events.db` and writes `output/market-events-<from>-to-<to>.html` from `templates/digest.html`: daily theme dots, threads, market moves and a daily log. It uses the newest run of each day. One Claude call writes the headline, themes and threads from the stored summaries and claims, and the page says that text is not checked by verify. Runs made before 2026-10-04 have no stored summaries or countries, so run those days again before building a page that covers them.
 
 ## LangSmith Studio
 
@@ -74,12 +79,13 @@ Serves `event_graph` from `langgraph.json`. Studio adds its own persistence, so 
 
 ## Limits
 
-- GKG's market themes let some politics and lifestyle stories through. Jev's score in triage filters them, keeping the 3 highest with no minimum.
+- GKG's market themes let some politics and lifestyle stories through. Jev's score in triage filters them, keeping the 5 highest with no minimum.
 - A run on a window with nothing stored downloads about 80 MB of GKG (24 files), about 10-35 seconds.
 - Jev judges severity from the page title and GDELT metadata, not the article, so its score ranks leads and is not a fact.
 - Jev's freshness check passes standing facts (a company's revenue mix, an analyst estimate) and removes older events reported as news. On 38 claims the old wording had removed, it removes 6, all older events. Jev's scores vary between runs, so a borderline claim can land either side.
 - The finding's summary is written by the research model and is not checked by verify.
-- price shows observed sector moves, not proof that the news caused them.
+- price shows observed moves, not proof that the news caused them. Few US-listed ETFs hold one sector of one country, so a non-US tag is priced with the whole country's market.
+- Jev's confidence is often below 0.75 on non-US claims, so many of them still get no tag.
 
 ## Tests
 
@@ -88,4 +94,4 @@ uv run pytest -q
 uv run ruff check .
 ```
 
-The tests cover gdelt, triage, verify, price, output and the follow-up routing, with Jev, Tavily and GDELT stubbed.
+The tests cover gdelt, triage, verify, price, output, the database upgrade, digest and the follow-up routing, with Jev, Tavily and GDELT stubbed.

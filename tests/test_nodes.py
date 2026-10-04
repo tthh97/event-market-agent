@@ -16,6 +16,7 @@ from langgraph.runtime import Runtime
 from langgraph.store.memory import InMemoryStore
 
 import db
+import digest
 import gdelt
 import output
 import prices
@@ -23,7 +24,7 @@ import research
 import triage
 import verify
 from graph import start
-from state import Claim, Finding, ScoredStory, Source, State, Story
+from state import Claim, Finding, Move, ScoredStory, Source, State, Story
 
 
 def gkg_row(url, site, title, themes=("ECON_OILPRICE",), persons="", orgs="", places=""):
@@ -114,9 +115,9 @@ def test_a_window_15_minutes_later_downloads_only_the_new_file(tmp_path):
 def test_triage_keeps_the_most_severe(monkeypatch):
     monkeypatch.setenv("TYPESAFE_API_KEY", "test")
     monkeypatch.setattr(triage, "jev_scores", lambda stories: {i: (float(i), 0.5) for i in range(len(stories))})
-    stories = [Story(**story(f"https://x.com/s{i}").model_dump(exclude={"severity", "confidence"})) for i in range(5)]
+    stories = [Story(**story(f"https://x.com/s{i}").model_dump(exclude={"severity", "confidence"})) for i in range(7)]
     result = triage.triage(State(stories=stories))
-    assert [s.url for s in result["severe"]] == ["https://x.com/s4", "https://x.com/s3", "https://x.com/s2"]
+    assert [s.url for s in result["severe"]] == [f"https://x.com/s{i}" for i in (6, 5, 4, 3, 2)]
 
 
 def test_triage_without_jev_says_so(monkeypatch):
@@ -142,20 +143,31 @@ def test_output_writes_markdown_and_replies(tmp_path, monkeypatch):
     monkeypatch.setattr(output, "FOLDER", tmp_path)
     monkeypatch.setattr(db, "PATH", tmp_path / "events.db")
     store = InMemoryStore()
-    claim = Claim(text="Brent rose 3%.", source_url="https://a.com/1", source_date="2026-09-29", sector="energy")
+    claims = [Claim(text="Brent rose 3%.", source_url="https://a.com/1", source_date="2026-09-29", sector="energy",
+                    country="us"),
+              Claim(text="Indian lenders face higher funding costs.", source_url="https://a.com/2",
+                    source_date="2026-09-29", sector="financials", country="india")]
+    moves = [Move(sector="energy", country="us", etf="XLE", benchmark="SPY", move=2.0, vs_benchmark=1.8),
+             Move(sector="financials", country="india", etf="INDA", benchmark="ACWI", move=-1.0, vs_benchmark=-0.5)]
     state = State(as_of="2026-09-30", jev_status="ok", severe=[story(severity=2.5)],
-                  findings=[Finding(topic="Oil", summary="Oil rose.", claims=[claim])],
-                  moves={"energy": (2.0, 1.8)}, price_window="Close 29 Sep to close 30 Sep.")
+                  findings=[Finding(topic="Oil", summary="Oil rose.", claims=claims)],
+                  moves=moves, price_window="Close 29 Sep to close 30 Sep.")
     result = output.output(state, {"configurable": {"thread_id": "t1"}}, Runtime(store=store))
     text = open(result["report"], encoding="utf-8").read()
-    assert "Jev severity: 2.50 of 3" in text and "Sector: energy." in text
-    assert "| energy | XLE | +2.0% | +1.8 pts |" in text and "Close 29 Sep to close 30 Sep." in text
+    assert "Jev severity: 2.50 of 3" in text and "Sector: energy, us." in text and "Sector: financials, india." in text
+    assert "| energy | us, sector ETF | XLE | +2.0% | +1.8 pts vs SPY |" in text
+    assert "| financials | india, whole market | INDA | -1.0% | -0.5 pts vs ACWI |" in text
+    assert "Close 29 Sep to close 30 Sep." in text
     assert result["messages"][0].content == text
     with closing(db.connect()) as connection:
         assert connection.execute("SELECT thread_id, as_of, kind FROM run").fetchall() == [("t1", "2026-09-30", "events")]
-        assert connection.execute("SELECT rank, severity FROM story").fetchall() == [(1, 2.5)]
-        assert connection.execute("SELECT text, sector, unverified FROM claim").fetchall() == [("Brent rose 3%.", "energy", 0)]
-        assert connection.execute("SELECT sector, move, vs_spy FROM price_move").fetchall() == [("energy", 2.0, 1.8)]
+        assert connection.execute("SELECT rank, severity, topic, summary, themes FROM story").fetchall() == [
+            (1, 2.5, "Oil", "Oil rose.", "ECON_OILPRICE")]
+        assert connection.execute("SELECT text, sector, country, unverified FROM claim ORDER BY text").fetchall() == [
+            ("Brent rose 3%.", "energy", "us", 0), ("Indian lenders face higher funding costs.", "financials", "india", 0)]
+        assert connection.execute("SELECT sector, country, etf, benchmark, move, vs_benchmark FROM market_move "
+                                  "ORDER BY sector").fetchall() == [("energy", "us", "XLE", "SPY", 2.0, 1.8),
+                                                                    ("financials", "india", "INDA", "ACWI", -1.0, -0.5)]
     assert [i.value["topic"] for i in store.search(("findings", "2026-09-30"))] == ["Oil"]
 
 
@@ -163,18 +175,20 @@ def test_output_writes_an_html_page_next_to_the_markdown(tmp_path, monkeypatch):
     monkeypatch.setattr(output, "FOLDER", tmp_path)
     monkeypatch.setattr(db, "PATH", tmp_path / "events.db")
     claims = [Claim(text="Brent rose 3% <script>alert(1)</script>.", source_url="https://a.com/1",
-                    source_date="2026-09-29", sector="energy", unverified=True),
+                    source_date="2026-09-29", sector="energy", country="us", unverified=True),
               Claim(text="A bad link.", source_url="javascript:alert(1)", source_date="unknown")]
     state = State(as_of="2026-09-30", jev_status="ok", severe=[story(severity=2.5)],
                   findings=[Finding(topic="Oil & gas", summary="Oil rose.", claims=claims)],
                   rejected=['Oil: "Brent rose 9%." (number(s) 9 not in the source)'],
-                  moves={"energy": (2.0, 1.8)}, price_window="Close 29 Sep to close 30 Sep.")
+                  moves=[Move(sector="energy", country="us", etf="XLE", benchmark="SPY", move=2.0, vs_benchmark=1.8)],
+                  price_window="Close 29 Sep to close 30 Sep.")
     result = output.output(state, {"configurable": {"thread_id": "t1"}}, Runtime(store=InMemoryStore()))
     page = open(result["report"].removesuffix(".md") + ".html", encoding="utf-8").read()
     assert page.startswith("<!doctype html>") and "Oil &amp; gas" in page and "2.50 of 3" in page
     assert '<a href="https://a.com/1">' in page and "Unverified" in page and "&lt;script&gt;" in page
     assert "<script>" not in page and 'href="javascript:' not in page
-    assert "XLE" in page and "+2.0%" in page and "+1.8 pts" in page and "Brent rose 9%" in page
+    assert "XLE" in page and "+2.0%" in page and "+1.8 pts" in page and "vs SPY" in page and "Brent rose 9%" in page
+    assert "energy · us" in page
 
 
 def test_research_recalls_the_last_7_days_of_findings():
@@ -196,34 +210,69 @@ def test_follow_ups_skip_to_research():
 def test_verify_routes_claims_on_jev_confidence(monkeypatch):
     monkeypatch.setenv("TYPESAFE_API_KEY", "test")
     monkeypatch.setattr(verify, "jev_checks", lambda claims, as_of: [
-        (0.95, 0.9, "energy", 0.9), (0.6, 0.9, "energy", 0.5), (0.9, 0.2, "none", 0.9)])
+        (0.95, 0.9, "energy", 0.9, "global", 0.8), (0.6, 0.9, "energy", 0.5, "us", 0.9),
+        (0.9, 0.9, "energy", 0.9, "us", 0.5), (0.9, 0.2, "none", 0.9, "us", 0.9)])
     source = Source(url="https://a.com/1", title="Oil jumps", published="2026-09-29",
-                    excerpt="Brent rose 3% to $107. Refiners gained.")
+                    excerpt="Brent rose 3% to $107. Refiners gained. Pipelines shut.")
     claims = [Claim(text=t, source_url=source.url, source_date="unknown")
-              for t in ("Brent rose 3%.", "Refiners gained.", "Brent hit $107.")]
+              for t in ("Brent rose 3%.", "Refiners gained.", "Pipelines shut.", "Brent hit $107.")]
     result = verify.verify(State(as_of="2026-09-30", findings=[Finding(topic="Oil", summary="s", claims=claims)],
                                  sources=[source]))
     kept = result["findings"][0].claims
-    assert [(c.text, c.unverified, c.sector) for c in kept] == [("Brent rose 3%.", False, "energy"),
-                                                                ("Refiners gained.", True, None)]
+    # A tag needs Jev sure of both the sector and the country; an unsure country drops the whole tag.
+    assert [(c.text, c.unverified, c.sector, c.country) for c in kept] == [
+        ("Brent rose 3%.", False, "energy", "global"), ("Refiners gained.", True, None, None),
+        ("Pipelines shut.", False, None, None)]
     assert result["rejected"] == ['Oil: "Brent hit $107." (Jev: it is about an earlier period)']
-    assert result["verify_status"] == "ok: Jev checked 3 claims"
+    assert result["verify_status"] == "ok: Jev checked 4 claims"
 
 
-def test_sector_moves_measure_the_last_closed_session_against_spy():
-    frame = pd.DataFrame({"XLE": [100.0, 102.0], "SPY": [500.0, 501.0]},
+def test_market_moves_price_us_sectors_against_spy_and_other_markets_against_acwi():
+    frame = pd.DataFrame({"XLE": [100.0, 102.0], "SPY": [500.0, 501.0], "INDA": [50.0, 49.0],
+                          "IXC": [40.0, 40.4], "ACWI": [100.0, 100.5]},
                          index=pd.to_datetime(["2026-09-29", "2026-09-30"]))
     asked = []
-    moves, window = prices.sector_moves(["energy"], date(2026, 9, 30),
+    tags = [("energy", "us"), ("financials", "india"), ("energy", "global")]
+    moves, window = prices.market_moves(tags, date(2026, 9, 30),
                                         lambda symbols, start, end: asked.append(symbols) or frame)
-    assert asked == [["SPY", "XLE"]]
-    assert moves["energy"] == pytest.approx((2.0, 1.8))
-    assert all(type(value) is float for value in moves["energy"])  # numpy floats break the checkpoint
+    assert asked == [["ACWI", "INDA", "IXC", "SPY", "XLE"]]
+    got = {(m.sector, m.country): (m.etf, m.benchmark, m.move, m.vs_benchmark) for m in moves}
+    assert got[("energy", "us")] == ("XLE", "SPY", pytest.approx(2.0), pytest.approx(1.8))
+    assert got[("financials", "india")] == ("INDA", "ACWI", pytest.approx(-2.0), pytest.approx(-2.5))
+    assert got[("energy", "global")] == ("IXC", "ACWI", pytest.approx(1.0), pytest.approx(0.5))
+    assert all(type(m.move) is float and type(m.vs_benchmark) is float for m in moves)  # numpy floats break the checkpoint
     assert window.startswith("Close 29 Sep to close 30 Sep")
 
 
 def test_price_without_sectors_asks_for_no_prices():
-    assert prices.price(State(as_of="2026-09-30")) == {"moves": {}, "price_window": ""}
+    assert prices.price(State(as_of="2026-09-30")) == {"moves": [], "price_window": ""}
+
+
+def test_old_thread_moves_load_as_us():
+    state = State(moves={"energy": (2.0, 1.8)})
+    assert state.moves == [Move(sector="energy", country="us", etf="XLE", benchmark="SPY", move=2.0, vs_benchmark=1.8)]
+
+
+def test_upgrade_moves_old_price_rows_to_us(tmp_path):
+    path = tmp_path / "events.db"
+    with closing(sqlite3.connect(path)) as connection:
+        connection.executescript("""
+            CREATE TABLE story (run_id TEXT, rank INTEGER, title TEXT, url TEXT, severity REAL, articles INTEGER,
+                                sites INTEGER, PRIMARY KEY (run_id, rank));
+            CREATE TABLE claim (run_id TEXT, topic TEXT, text TEXT, source_url TEXT, source_date TEXT, sector TEXT,
+                                unverified INTEGER, PRIMARY KEY (run_id, text));
+            CREATE TABLE price_move (run_id TEXT, sector TEXT, move REAL, vs_spy REAL, PRIMARY KEY (run_id, sector));
+            INSERT INTO claim VALUES ('r1', 'Oil', 'Brent rose 3%.', 'https://a.com/1', '2026-09-29', 'energy', 0);
+            INSERT INTO claim VALUES ('r1', 'Oil', 'Talks resumed.', 'https://a.com/1', '2026-09-29', NULL, 0);
+            INSERT INTO price_move VALUES ('r1', 'energy', 2.0, 1.8);""")
+        connection.commit()
+    for _ in range(2):  # a second connect finds nothing left to upgrade
+        with closing(db.connect(path)) as connection:
+            assert connection.execute("SELECT * FROM market_move").fetchall() == [("r1", "energy", "us", "XLE", "SPY", 2.0, 1.8)]
+            assert connection.execute("SELECT text, country FROM claim ORDER BY text").fetchall() == [
+                ("Brent rose 3%.", "us"), ("Talks resumed.", None)]
+            assert not connection.execute("SELECT 1 FROM sqlite_master WHERE name = 'price_move'").fetchone()
+            assert {"topic", "summary", "themes"} <= {row[1] for row in connection.execute("PRAGMA table_info(story)")}
 
 
 
@@ -277,3 +326,31 @@ def test_reader_keeps_only_articles_it_quotes(monkeypatch):
     articles = [Source(url=f"https://a.com/{i}", title=t, published="2026-09-29", excerpt="text")
                 for i, t in enumerate(("Fed holds", "Oil jumps"))]
     assert research.read_articles("oil price", articles) == {1: ["Brent rose 3%."]}
+
+
+def test_digest_uses_the_newest_run_per_day_and_files_unknown_themes_under_other(tmp_path, monkeypatch):
+    monkeypatch.setattr(output, "FOLDER", tmp_path)
+    monkeypatch.setattr(db, "PATH", tmp_path / "events.db")
+    claim = Claim(text="Brent rose 3%.", source_url="https://a.com/1", source_date="2026-10-02", sector="energy",
+                  country="global")
+    move = Move(sector="energy", country="global", etf="IXC", benchmark="ACWI", move=1.0, vs_benchmark=0.5)
+    for thread, topic in [("t1", "Old run"), ("t2", "Oil")]:  # two runs of 2 Oct; the second one counts
+        state = State(as_of="2026-10-02", jev_status="ok", severe=[story(severity=2.5)],
+                      findings=[Finding(topic=topic, summary=f"{topic} summary.", claims=[claim])],
+                      moves=[move], price_window="Close 01 Oct to close 02 Oct.")
+        output.output(state, {"configurable": {"thread_id": thread}}, Runtime(store=InMemoryStore()))
+        with closing(db.connect()) as connection, connection:  # runs made in the same second sort by created_at
+            connection.execute("UPDATE run SET created_at = ? WHERE thread_id = ?", (f"2026-10-02 0{thread[1]}:00:00", thread))
+    days = digest.load("2026-10-01", "2026-10-04")
+    assert [d["day"] for d in days] == ["2026-10-02"]
+    assert days[0]["stories"][0]["summary"] == "Oil summary."
+    assert days[0]["stories"][0]["claims"][0]["country"] == "global"
+    assert days[0]["market"] == [{"sector": "energy", "country": "global", "etf": "IXC", "benchmark": "ACWI",
+                                  "move": "+1.0%", "vs": "+0.5 pts"}]
+    writing = digest.Writing(headline="Oil week", lead="Oil </script> moved.", themes=[digest.Theme(key="oil", name="Oil")],
+                             story_themes=[digest.StoryTheme(story="2026-10-02#1", theme="made-up")],
+                             threads=[digest.Thread(theme="oil", days="2 Oct", title="Oil", paragraphs=["Brent rose."])])
+    html = digest.page("2026-10-01", "2026-10-04", days, writing)
+    assert "/*DATA*/null" not in html and '"theme": "other"' in html and '"key": "other"' in html
+    assert "Oil <\\/script> moved." in html and "Oil </script> moved." not in html
+

@@ -14,7 +14,7 @@ from typesafe_sdk import Score, TypeSafeClient
 
 from state import ScoredStory, State
 
-KEEP = 3
+KEEP = 5
 
 RUBRIC = [
     "minor: little economic consequence beyond the news cycle",
